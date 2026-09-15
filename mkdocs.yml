@@ -87,7 +87,13 @@ markdown_extensions:
   - toc:
       permalink: true
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        # ponytail: not Material's mermaid class. Material renders into a closed
+        # shadow root, which pulse.js can't clone for click-to-zoom.
+        - name: mermaid
+          class: pulse-mermaid
+          format: !!python/name:pymdownx.superfences.fence_div_format
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.emoji:
@@ -120,6 +126,27 @@ nav:
           - Testing: yid/testing.md
           - Privacy and Security: yid/privacy-security.md
           - Production Checklist: yid/production-checklist.md
+  - Pulse:
+      - pulse/index.md
+      - Getting started:
+          - Use with AI agents: pulse/ai-agents.md
+          - Choosing an integration path: pulse/integration-options.md
+          - HTTP quickstart: pulse/http-quickstart.md
+          - FAQ: pulse/faq.md
+          - Showcase: pulse/showcase.md
+      - Concepts:
+          - Terms: pulse/terms.md
+          - Receipts: pulse/receipts.md
+          - User-signed approvals: pulse/user-signed-approvals.md
+          - Action enforcement: pulse/action-enforcement.md
+      - Reference:
+          - OpenAPI contract: https://github.com/yanez-compliance/yanez-agent-authorization/blob/main/openapi/agent-authorization.openapi.yaml
+          - Python SDK: https://github.com/yanez-compliance/yanez-agent-authorization/tree/main/packages/python
+          - TypeScript SDK: https://github.com/yanez-compliance/yanez-agent-authorization/tree/main/packages/typescript
+          - CLI: https://github.com/yanez-compliance/yanez-agent-authorization/tree/main/cli
+          - MCP server: https://github.com/yanez-compliance/yanez-agent-authorization/tree/main/integrations/mcp
+          - Skill: https://github.com/yanez-compliance/yanez-agent-authorization/tree/main/skills/yanez-authorize
+          - Examples: https://github.com/yanez-compliance/yanez-agent-authorization/tree/main/examples
   - Changelog:
       - changelog/index.md
   - Download: download.md
