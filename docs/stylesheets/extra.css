@@ -365,3 +365,22 @@
 .showcase-popup::backdrop { background: rgba(26, 31, 54, 0.7); }
 .showcase-popup video, .showcase-popup img { display: block; width: 100%; height: auto; }
 .showcase-close { position: sticky; top: 10px; z-index: 1; float: right; margin: 10px 10px -46px 0; width: 36px; height: 36px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.92); color: #1a1f36; font-size: 22px; line-height: 1; cursor: pointer; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); }
+
+/* Page toolbar: overrides/main.html */
+.md-typeset .page-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+  align-items: center;
+  margin: 0 0 1rem;
+  font-size: 0.65rem;
+}
+
+.md-typeset .page-tools__copy {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--md-typeset-a-color);
+  font: inherit;
+  cursor: pointer;
+}

@@ -1,0 +1,18 @@
+{#- Page toolbar from the Pulse docs: hand the page's raw Markdown to a person or an AI assistant. -#}
+{% extends "base.html" %}
+
+{% block content %}
+  {% if not page.file.generated_by %}
+    {% set md_url = "https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/" ~ page.file.src_uri %}
+    {% set product = "Yanez Pulse agent authorization" if page.file.src_uri.startswith("pulse/") else "Yanez YID partner integration" %}
+    {% set prompt = "Read " ~ md_url ~ " and help me integrate " ~ product ~ " into my project." %}
+    <div class="page-tools">
+      <button type="button" class="page-tools__copy" data-md="{{ md_url }}">Copy page</button>
+      <a href="{{ md_url }}">View as Markdown</a>
+      <a href="https://claude.ai/new?q={{ prompt | urlencode }}">Open in Claude</a>
+      <a href="https://chatgpt.com/?q={{ prompt | urlencode }}">Open in ChatGPT</a>
+      <a href="{{ base_url }}/llms.txt">llms.txt</a>
+    </div>
+  {% endif %}
+  {{ super() }}
+{% endblock %}

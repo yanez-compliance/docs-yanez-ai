@@ -1,0 +1,81 @@
+# Yanez Docs
+
+> Integration documentation for two Yanez products. YID partner integration lets a partner backend verify that a user holds a Yanez biometric identity, using signed requests, signed deep links, and BLS-signed callbacks. Yanez Pulse (agent authorization) lets an AI agent request verifiable human approval for a sensitive action, and lets the action executor verify the signed receipt before anything runs.
+
+Rendered docs: https://docs.yanez.ai/ Source: https://github.com/yanez-compliance/docs-yanez-ai
+
+Pulse: Verifiable human approval for sensitive AI agent actions. An agent requests approval of exact terms, the user approves in the YID app behind a fresh biometric scan and signs the decision with their own key, and the action executor verifies both signatures before anything runs. One HTTP/OpenAPI contract is the source of truth; the Python and TypeScript SDKs, the CLI, the MCP server, and the skill are adapters over it.
+
+Pulse key facts:
+
+- Three parties. The agent creates an authorization request with exact `terms` and polls for the decision; its `yak_` API key can ask, not act. The user approves or rejects in the YID app. The action executor (relying party) verifies the signed receipt against the proposed action and consumes it when the action is single-use.
+- `terms` has a fixed, versioned shape: required `schema_version: 1`; non-blank `action`, `approval_title`, `summary`, and `merchant`; and `details`, whose rows require non-blank `label` and `value` while boolean `emphasized` is optional. Financial actions include allowlisted `currency` plus `amount` as `{minor_units, currency}`; non-financial actions omit both and YanezYID omits the Amount row. `amount.display` was removed because the app formats from `minor_units` and the currency's exponent. Every number anywhere in terms must be an integer no greater than 2^53-1. `agent_name` is optional, extra keys are allowed, and the approved object is embedded in the receipt as `yanez_terms`.
+- A receipt authorizes nothing by itself. The action executor must verify BOTH signatures — Yanez's Ed25519 signature over the receipt, and the approver's own BLS signature over `yanez_signed_message` — compare the signed `yanez_terms` with the proposed action structurally, check every field inside the signed message against the receipt, apply its own freshness policy (including `yanez_consent_not_after`) and its own `yanez_assurance_tier` floor, and consume single-use receipts. For single-use actions gate on `consumed_now: true`; `valid: true` only says the receipt is genuine. Consuming requires a caller-supplied `consumer_token`, reused verbatim on retry; `reason: "reservation_held"` means your own earlier attempt won and you should reconcile downstream rather than re-approve. A receipt is bearer proof: anyone holding it can consume it, so never log it or put it in a URL, and fetch the verification keys over HTTPS from a base URL you configure.
+- Five HTTP routes on a deployment-specific base URL (`YANEZ_BASE_URL`): `POST /api/agent/authorizations` creates a request (`Authorization: Bearer yak_...` plus a random `Idempotency-Key`); `GET /api/agent/authorizations/{request_id}?wait=25` long-polls for `pending`, `approved`, `rejected`, or `expired`; `GET /api/agent/user_keys` (agent key; Development only for now) lists the `{tier, public_key}` pairs registered for the key's own user, with keys spelled `0x` + lowercase hex like `yanez_user_public_key` and `tier` null when unrecognized; `GET /api/authz/public-keys` returns Ed25519 JWKs (public); `POST /api/authz/introspect` consumes a receipt (public).
+- The receipt (`artifact`) is a compact EdDSA JWS. Verify it offline: pin `alg=EdDSA`, select the key by header `kid`, check your exact expected `iss`, and check that `sub` is the YID tied to the account being acted on.
+- The receipt also carries the approver's own proof in five required claims: `yanez_assurance_tier` (`low`/`medium`/`high`), `yanez_user_public_key`, `yanez_user_signature`, `yanez_signed_message`, `yanez_user_sig_alg` (`BLS12-381-G2-basic`). Verify the signature over the exact base64url-decoded bytes of `yanez_signed_message` using BLS12-381 minimal-pubkey-size, IRTF basic scheme, DST `BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_`, then check every field inside those bytes against the receipt: `decision == "approve"`, `version`, `issuer`, `action == "agent_authorizations.decision"`, `authorization_request_id == jti`, `yid == sub`, `assurance_tier == yanez_assurance_tier`, `terms` equal to `yanez_terms`, `consent_not_after` equal to the receipt's bound, and `signed_at` close to `yanez_decided_at`. Both SDKs do this inside `verify`; standalone helpers are `verify_user_proof` / `verifyUserProof`. Receipts minted before this contract lack the five claims and MUST fail rather than degrade.
+- Credential rule: the `yak_` key comes from configuration (`YANEZ_AGENT_API_KEY` or a secret manager), never from model prompts, tool arguments, command-line flags, or logs. Never hand it to a sub-agent.
+- MCP is not required. A skill alone is not a security boundary; pair it with the CLI or the MCP server. The MCP server exposes only `yanez_request_authorization` and `yanez_get_authorization`; consuming belongs to the action executor, so there is no consume tool.
+- Packages: PyPI `yanez-agent-authorization` (import `yanez_authz`), `yanez-authz-cli` (installs `yanez-authz`), `yanez-authz-mcp`; npm `@yanez.ai/agent-authorization`. Pre-release: the Python SDK is on PyPI (`pip install --pre yanez-agent-authorization`) and the TypeScript SDK is on npm under the `beta` tag (`npm install @yanez.ai/agent-authorization@beta`); the CLI and MCP server are not published yet, so install them from a checkout.
+- Rendered docs: https://docs.yanez.ai/pulse/ Docs source: https://github.com/yanez-compliance/docs-yanez-ai Code: https://github.com/yanez-compliance/yanez-agent-authorization
+
+## YID Partner Integration
+
+- [Quickstart](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/yid/quickstart.md): Go from nothing to a verified signed request against the Yanez test environment in about ten minutes
+- [Overview](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/yid/overview.md): What YanezYID lets a partner verify, the architecture, and the integration surfaces
+- [Onboarding](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/yid/onboarding.md): The checklist to prepare for Yanez partner onboarding
+- [Partner concepts](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/yid/concepts.md): Partner accounts, Ed25519 signing keys, and sandbox versus production
+- [Authentication](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/yid/authentication.md): Ed25519 request signatures for partner backend requests; bearer API keys are not used
+- [Deep link signing](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/yid/deep-link-signing.md): Build and sign the HTTPS App Link that opens YanezYID
+- [Callback verification](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/yid/callback.md): Verify the signed result YanezYID POSTs to the partner backend's callback URL
+- [Backend API](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/yid/api/backend-api.md): The partner-facing API surface
+- [Errors](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/yid/api/errors.md): HTTP status codes and JSON error bodies
+- [Web apps](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/yid/platforms/web.md): Web integration with the partner backend as the trust boundary
+- [Android apps](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/yid/platforms/android.md): Android integration with YanezYID on Android or an SDK flow
+- [iPhone apps](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/yid/platforms/ios.md): iPhone integration with YanezYID on iOS and Apple App Attest
+- [Testing](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/yid/testing.md): Sandbox credentials and URLs for integration testing
+- [Privacy and security](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/yid/privacy-security.md): Handling integration data in biometric identity flows
+- [Production checklist](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/yid/production-checklist.md): What to confirm before production launch
+
+## Shared concepts
+
+- [Identity and keys](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/concepts/identity.md): The yid, bio-derived BLS keys, threshold tiers, addresses, and public key binding
+- [Environments](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/concepts/environments.md): Test and production base URLs, deep-link bases, and registration QR codes
+- [Glossary](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/concepts/glossary.md): Terms used across YID partner integration and Pulse
+
+## Pulse: Docs
+
+- [Choosing an integration path](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/pulse/integration-options.md): Four layers, from raw HTTP to MCP, over one shared contract, and which one fits which runtime
+- [HTTP quickstart](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/pulse/http-quickstart.md): Create, poll, verify, and consume an authorization over the five HTTP routes, with the idempotency and long-poll rules
+- [Terms](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/pulse/terms.md): Every required field of the `terms` object the human approves, including the `amount` and `details` shapes the YID app renders
+- [Receipts](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/pulse/receipts.md): The claim profile of the signed receipt, how Yanez signs it, and how verification keys rotate
+- [Action enforcement](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/pulse/action-enforcement.md): The contract for the boundary that turns a verified receipt into an action
+- [User-signed approvals](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/pulse/user-signed-approvals.md): The approver's own signature: what changed in the schema, and the steps to verify both signatures
+- [FAQ](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/pulse/faq.md): Where to find your YID, and the base URL for each environment
+
+## Pulse: API contract
+
+- [OpenAPI contract](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/openapi/agent-authorization.openapi.yaml): Full request and response schemas for the five routes, exported from the Yanez server
+
+## Pulse: SDKs and adapters
+
+- [Python SDK](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/packages/python/README.md): `yanez-agent-authorization`, an async client for requesting approval and a verifier for receipts
+- [TypeScript SDK](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/packages/typescript/README.md): `@yanez.ai/agent-authorization`, a client and verifier for Node agents and relying parties
+- [CLI](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/cli/README.md): `yanez-authz`, a thin shell adapter over the Python SDK for coding agents that can run local commands
+- [MCP server](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/integrations/mcp/README.md): `yanez-authz-mcp`, a local stdio server that holds one agent credential and exposes the request and get tools
+- [Skill](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/skills/yanez-authorize/SKILL.md): `yanez-authorize`, which teaches an agent when and how to ask before moving money, accepting agreements, releasing sensitive data, changing durable state, or using privileged permissions
+
+## Pulse: Examples
+
+- [Python quickstart](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/examples/python/quickstart.py): Agent side and relying-party side in one file
+- [TypeScript quickstart](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/examples/typescript/quickstart.mts): Agent side and relying-party side in one file
+- [Raw HTTP](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/examples/raw-http/create-and-poll.sh): Create a request and long-poll until it is decided, using curl and jq
+- [MCP integration](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/examples/mcp/README.md): Install and configure the stdio MCP server for an MCP-capable host
+- [Skill + CLI integration](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/examples/skill-cli/README.md): Skill plus CLI for hosts that can run local commands, without MCP
+
+## Optional
+
+- [Integration model](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/skills/yanez-authorize/references/integration-model.md): What the receipt is and who enforces it
+- [Writing terms](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/skills/yanez-authorize/references/terms-guidance.md): How to write terms specific enough that approval means one thing
+- [Skill evaluation scenarios](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/skills/yanez-authorize/EVALUATIONS.md): The behavioral contract for any host that ships the skill
+- [Security policy](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/SECURITY.md): How to report a vulnerability

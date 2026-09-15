@@ -34,4 +34,19 @@
     const badge = document.querySelector('.badge[data-os="' + os + '"]');
     if (badge) badge.classList.add("badge--match");
   }
+
+  /* Page toolbar: copy the page's raw Markdown, or open it when the clipboard is blocked. */
+  const copy = document.querySelector(".page-tools__copy");
+  if (copy) {
+    copy.addEventListener("click", function () {
+      fetch(copy.dataset.md)
+        .then(function (response) { return response.text(); })
+        .then(function (text) { return navigator.clipboard.writeText(text); })
+        .then(function () {
+          copy.textContent = "Copied";
+          setTimeout(function () { copy.textContent = "Copy page"; }, 1500);
+        })
+        .catch(function () { window.open(copy.dataset.md); });
+    });
+  }
 })();
