@@ -42,10 +42,12 @@ partner apps that verify people with YID.
   </li>
 </ul>
 
+<div>
 <dialog class="showcase-popup" id="showcase-popup" aria-label="Showcase media">
   <button type="button" class="showcase-close" aria-label="Close">&times;</button>
   <div></div>
 </dialog>
+</div>
 
 ## Add your agent
 
