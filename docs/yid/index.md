@@ -101,10 +101,9 @@ leave your backend, and every partner request is signed end to end.
 
 ## Environments
 
-| Environment | Base URL | Use for |
-| --- | --- | --- |
-| Test | `https://ptest.yanez.ai` | All development and certification work. |
-| Production | `https://yid.yanez.ai` | Live traffic, after the [production checklist](production-checklist.md). |
+Test and production base URLs are on the shared
+[Environments](../concepts/environments.md) page. Go live after the
+[production checklist](production-checklist.md).
 
 ## Keep up to date
 

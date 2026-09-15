@@ -11,12 +11,8 @@ Open the YID app and go to **Settings**. Your YID is shown under the Yanez Guest
 
 ## What is the base URL for agent authorization requests?
 
-It depends on the environment you are pointing at:
-
-| Environment | Base URL |
-|---|---|
-| Test | `https://ptest.yanez.ai` |
-| Production | `https://yid.yanez.ai` |
+It depends on the environment you are pointing at. The base URL for each environment
+is on the shared [Environments](../concepts/environments.md) page.
 
 Every route in the [HTTP quickstart](http-quickstart.md) hangs off this base URL.
 
@@ -27,9 +23,6 @@ Open the YID app and go to **Settings → Agent Keys**.
 ## How do I register?
 
 Today, registration requires scanning a QR code. Generate one from the site for
-your environment, or from a partner's site:
-
-| Environment | QR code source |
-|---|---|
-| Test | `https://qrcode-ptest.yanezcompliance.com`, or a partner test site (Skylo, dFusion) |
-| Production | `https://qrcode.yanezcompliance.net`, or a partner production site (Skylo, dFusion) |
+your environment, listed under
+[Registration QR Codes](../concepts/environments.md#registration-qr-codes), or from a
+partner's site.

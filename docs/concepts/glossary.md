@@ -29,3 +29,13 @@
 **kid** — The partner signing-key identifier. Included in every signed request so Yanez can resolve the correct public key.
 
 **DEEP_LINK_BASE** — The per-environment HTTPS base URL for the App Link / Universal Link deep link (e.g. `https://yid.yanez.ai/open` in production, `https://ptest.yanez.ai/open` in partner test). The signed query string is appended to it; the link falls back to the app store when the app isn't installed. Replaces the deprecated `yanezbio://sign` custom scheme. See [Deep Link Signing](../yid/deep-link-signing.md#url-format).
+
+**terms** — The object the human approves and the relying party enforces. The server validates its shape on create. See [Terms](../pulse/terms.md).
+
+**Receipt** — The signed artifact a Yanez approval produces. It is what the relying party verifies before acting. See [Receipts](../pulse/receipts.md).
+
+**Action executor (relying party)** — Verifies the signed receipt against the proposed action and consumes it when single-use. See [Action enforcement](../pulse/action-enforcement.md).
+
+**`yak_` agent key** — The agent API key an agent uses to create authorization requests. The key can ask, not act. It comes from configuration (`YANEZ_AGENT_API_KEY` or a secret manager), never from model prompts, tool arguments, command-line flags, or logs.
+
+**Assurance tier** — In a Pulse receipt, `yanez_assurance_tier`: the threshold tier the approver's scan reached (`low`, `medium`, or `high`). See **Threshold tier**.

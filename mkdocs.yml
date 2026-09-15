@@ -104,6 +104,9 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Concepts:
+      - concepts/index.md
+      - Identity and Keys: concepts/identity.md
+      - Environments: concepts/environments.md
       - Glossary: concepts/glossary.md
   - YID Partner Integration:
       - yid/index.md
