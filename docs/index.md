@@ -10,7 +10,7 @@ hide:
 
 <span class="hero__eyebrow">Yanez Docs</span>
 
-## Verify people, and let agents ask them first
+## Prove a real human is behind every action
 
 Integrate YID to confirm that a user holds a Yanez biometric identity. Use Pulse
 to let an AI agent request verifiable human approval before it acts.
