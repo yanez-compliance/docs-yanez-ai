@@ -14,6 +14,21 @@ The YID partner backend API and the Pulse agent authorization routes both use
 these base URLs. YID partners go live after the
 [production checklist](../yid/production-checklist.md).
 
+## Receipt Issuer
+
+Pulse receipts carry an `iss` claim naming the environment that minted them.
+Configure your verifier's expected issuer with the value for the environment you
+are verifying against — a Test receipt checked against the Production issuer
+fails as `bad_signature`.
+
+| Environment | Issuer |
+| --- | --- |
+| Test | `https://ptest.yanez.ai` |
+| Production | `https://yid.yanez.ai` |
+
+The issuer is deployment configuration that happens to match the base URL today;
+treat it as a separate setting. See [Receipts](../pulse/receipts.md).
+
 ## Deep Link Base
 
 YID partner deep links append a signed query string to a per-environment HTTPS

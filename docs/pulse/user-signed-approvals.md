@@ -21,7 +21,7 @@ This page covers what changed in the schema, and the steps to verify both signat
     The five proof claims are **required**. A receipt minted before this
     change fails verification rather than being reported as an approval nobody signed.
     `consume` also gains a required `consumer_token`. The Python SDK moves to
-    `0.1.0b4` and the TypeScript SDK to `1.0.0`; see [Upgrading](#upgrading).
+    `0.1.0b5` and the TypeScript SDK to `0.1.0-beta.6`; see [Upgrading](#upgrading).
 
 ## What changed in the schema
 
@@ -180,7 +180,9 @@ read two ways by two verifiers, each believing it agreed with the other.
 
 ## Verifying with the SDK
 
-Both SDKs check both signatures inside `verify`. Nothing extra to call.
+Both SDKs check both signatures inside `verify`. Nothing extra to call. The
+examples use the Production base URL and issuer; on Test both are
+`https://ptest.yanez.ai`. See [Environments](../concepts/environments.md#receipt-issuer).
 
 ```python
 from yanez_authz import ReceiptVerifier, ConsentPolicyError, UserSignatureError
@@ -262,12 +264,6 @@ harness:
 
 ## Checking the key against the registry
 
-!!! note "Development only"
-
-    This route is live on Development and not yet on Test or Production, where it returns
-    `404`. The helpers below take the key array as an argument, so they work
-    unchanged once the route ships everywhere.
-
 An agent can ask which keys the registry holds for its own user, and at which tiers:
 
 ```http
@@ -316,9 +312,6 @@ if (!keyIsRegistered(receipt.userProof.publicKey, receipt.assuranceTier, keys)) 
   // the receipt names a key the registry does not hold at that tier
 }
 ```
-
-Where the route is not deployed, `user_keys()` / `userKeys()` raises
-`FeatureUnavailableError`.
 
 **Read it at verification time.** Keys carry no revocation state, so a cached copy proves
 nothing about the registry today.
@@ -373,7 +366,7 @@ to a legal identity; that path is not provided.
 
 ## Upgrading
 
-The Python SDK moves to `0.1.0b4` and the TypeScript SDK to `1.0.0`. Two breaking changes:
+The Python SDK moves to `0.1.0b5` and the TypeScript SDK to `0.1.0-beta.6`. Two breaking changes:
 
 - **`consume` requires `consumer_token`.** An un-updated caller fails at the call site
   rather than silently producing a token that cannot survive a lost response.
