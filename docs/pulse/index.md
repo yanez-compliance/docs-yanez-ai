@@ -3,7 +3,7 @@ title: Overview
 description: Let an AI agent request verifiable human approval for a sensitive action, and verify the signed receipt before anything runs.
 ---
 
-# Agent Authorization
+# Yanez Pulse: Agent Authorization
 
 Let an AI agent request **verifiable human approval** for a sensitive action, and let the
 action's executor (the relying party) verify the signed receipt before anything runs.
