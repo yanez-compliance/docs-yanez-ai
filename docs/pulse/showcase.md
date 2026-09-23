@@ -12,10 +12,6 @@ partner apps that verify people with YID.
 
 <ul class="showcase">
   <li>
-    <a href="https://agent-auth-dev.yanezcompliance.com/" target="_blank" rel="noopener"><img src="../../assets/showcase/yanez-mart.png" width="196" height="48" alt="Yanez Mart"></a>
-    <span class="showcase-label">Ask the Agent what you want to buy</span>
-  </li>
-  <li>
     <a href="https://0xhound.com/" target="_blank" rel="noopener"><img src="../../assets/showcase/yid-wallet.png" width="196" height="48" alt="YID Wallet"></a>
     <span class="showcase-label">Let your agent spend. <span class="showcase-grad">Never hand it your keys.</span></span>
   </li>
