@@ -58,11 +58,10 @@ integer.
 
 ## details
 
-Each entry requires `label` and `value` as non-blank strings. `emphasized` is optional;
-set it to `true` to render a row with visual emphasis, or omit it for standard emphasis.
-When supplied, it must be a boolean. The app renders the entries as a two-column table
-in array order, so the array order is the reading order. The app doesn't sort, merge,
-or drop rows.
+Each entry requires `label` and `value` as non-blank strings, and `emphasized` as a
+boolean: `true` renders the row with visual emphasis, `false` with standard emphasis.
+The app renders the entries as a two-column table in array order, so the array order is
+the reading order. The app doesn't sort, merge, or drop rows.
 
 The array can be empty, but give it rows. The table is where the approver checks the
 specifics of what they're agreeing to, and a screen carrying only a title and a summary
@@ -114,11 +113,11 @@ monetary component:
   "summary": "Authorize your signature on the mutual NDA with Yanez Pulse.",
   "merchant": "Documenso",
   "details": [
-    {"label": "Document", "value": "Mutual Non-Disclosure Agreement"},
-    {"label": "Counterparty", "value": "Yanez Pulse"},
-    {"label": "Signing as", "value": "Yanez AI"},
-    {"label": "Agreement ID", "value": "NDA-2026-0914"},
-    {"label": "Governing law", "value": "California"}
+    {"label": "Document", "value": "Mutual Non-Disclosure Agreement", "emphasized": false},
+    {"label": "Counterparty", "value": "Yanez Pulse", "emphasized": false},
+    {"label": "Signing as", "value": "Yanez AI", "emphasized": false},
+    {"label": "Agreement ID", "value": "NDA-2026-0914", "emphasized": false},
+    {"label": "Governing law", "value": "California", "emphasized": false}
   ]
 }
 ```

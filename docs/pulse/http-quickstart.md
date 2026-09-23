@@ -37,7 +37,7 @@ Content-Type: application/json
 
 The core action fields are required. For non-financial actions, omit `amount` and
 `currency`; the YID app then omits the Amount row. Field rules, including the optional
-`amount` and `details[].emphasized` fields: [terms](terms.md).
+`amount` field and the boolean `details[].emphasized` field: [terms](terms.md).
 
 `201` → `{"request_id": "azr_...", "status": "pending", "decide_by": "..."}`.
 
