@@ -1,6 +1,6 @@
 # Yanez Docs
 
-Source for <https://docs.yanez.ai>: the YID partner integration docs and the Yanez
+This is the source for <https://docs.yanez.ai>: the YID partner integration docs and the Yanez
 Pulse agent authorization docs, built with MkDocs Material.
 
 ## Local preview
