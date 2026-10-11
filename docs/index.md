@@ -42,4 +42,13 @@ to let an AI agent request verifiable human approval before it acts.
 
     [:octicons-arrow-right-24: Pulse agent authorization](pulse/index.md)
 
+-   :material-wallet-outline:{ .lg .middle } **YID Gate**
+
+    ---
+
+    Let an AI agent pay or trade from your wallet within an allowance you set, with
+    every transfer approved by your face and verified on-chain.
+
+    [:octicons-arrow-right-24: YID Gate](gate/index.md)
+
 </div>
