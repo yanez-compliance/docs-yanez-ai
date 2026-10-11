@@ -152,6 +152,8 @@ nav:
           - MCP server: https://github.com/yanez-compliance/yanez-agent-authorization/tree/main/integrations/mcp
           - Skill: https://github.com/yanez-compliance/yanez-agent-authorization/tree/main/skills/yanez-authorize
           - Examples: https://github.com/yanez-compliance/yanez-agent-authorization/tree/main/examples
+  - Gate:
+      - gate/index.md
   - Changelog:
       - changelog/index.md
   - Download: download.md
