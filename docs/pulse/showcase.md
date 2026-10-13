@@ -33,7 +33,7 @@ partner apps that verify people with YID.
     <span class="showcase-label">Dollars within reach for everyone</span>
   </li>
   <li>
-    <a href="https://biovault-dev.yanezcompliance.com/" target="_blank" rel="noopener"><img src="../../assets/showcase/biovault.png" width="196" height="48" alt="BioVault"></a>
+    <a href="https://biovault.yanez.ai/" target="_blank" rel="noopener"><img src="../../assets/showcase/biovault.png" width="196" height="48" alt="BioVault"></a>
     <span class="showcase-label">Your face is your key</span>
   </li>
 </ul>
