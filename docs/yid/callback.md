@@ -11,6 +11,9 @@ equal that challenge exactly.
 
 ## Callback Payload
 
+This section and [Verification Steps](#verification-steps) describe links
+without `terms`. For a link with `terms`, see [Signed Decisions](#signed-decisions).
+
 YanezYID POSTs `application/json`:
 
 ```json
@@ -85,6 +88,11 @@ The verification steps below are identical for both modes — always verify the
 signature over the decoded `message` bytes regardless of how the result arrived.
 
 ## Verification Steps
+
+These steps apply to links without `terms`. For a link with `terms`, follow
+[Verifying a Signed Decision](#verifying-a-signed-decision) instead: the
+callback carries a signed envelope rather than your `message`, and you mark the
+request used only after a callback passes.
 
 All of the following must hold before the callback is accepted. Mark the
 challenge consumed on first receipt, regardless of outcome — challenges are
@@ -209,11 +217,13 @@ user's real callback still gets through.
 
 1. `request_id` maps to a request you issued that isn't expired or already
    decided. Don't mark it used yet.
-2. Decode `message` and verify `signature` over those exact bytes with the
-   `keys` entry whose `threshold_tier` equals `matched_tier`, using the
-   decision domain tag.
+2. Check that `matched_tier` is `low`, `medium`, or `high`. Then decode
+   `message` and verify `signature` over those exact bytes with the `keys`
+   entry whose `threshold_tier` equals `matched_tier`, using the decision
+   domain tag.
 3. Parse the envelope and check that:
     - `version` is `1` and `action` is `partner_signing.decision`.
+    - `decision` is `approve` or `reject`.
     - `app_id` is your `partner_id`.
     - `request_id` equals the callback's `request_id`.
     - `yid` is the user you sent the request to.
@@ -231,7 +241,11 @@ user's real callback still gets through.
    key belongs to the `yid`, not which tier it is.
 6. In one atomic step, mark the request decided and record `decision`. If a
    valid callback already decided it, ignore this one.
-7. Act on the recorded `decision`.
+7. Act on the recorded `decision`. Perform the requested action only for
+   `approve`; treat `reject` as the user declining.
+
+Respond `2xx` to every callback that passes these checks, including a valid
+decline. YanezYID shows any other status to the user as a failed delivery.
 
 A callback whose `message` isn't an envelope, after you sent `terms`, came
 from an older YanezYID. Ignore it; if the request expires without a valid

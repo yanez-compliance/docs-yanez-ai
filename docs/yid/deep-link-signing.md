@@ -132,8 +132,10 @@ receives.
 
 Rules:
 
-- No other keys are allowed, at any level. The user signs every byte of
-  `terms`, so YanezYID refuses fields it can't show.
+- No other keys are allowed, at any level. The user signs every key and value
+  of `terms`, so YanezYID refuses fields it can't show. The signed envelope
+  holds the decoded `terms`, not your parameter's original JSON bytes, so
+  compare keys and values when you verify.
 - Duplicate keys are invalid, and a link can have only one `terms`.
 - A link with `terms` must use `method=post`.
 - `terms` shares the link's 4,096-character limit.
