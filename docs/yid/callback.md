@@ -129,6 +129,114 @@ def verify_bls(pubkey_g1: bytes, message: bytes, signature_g2: bytes) -> bool:
 `message` is the decoded (raw bytes) value of the `message` field — the same
 bytes YanezYID signed verbatim.
 
+## Signed Decisions
+
+When your link includes [`terms`](deep-link-signing.md#approval-terms),
+YanezYID sends a signed decision instead of signing your `message` directly.
+The user approves or declines with a face scan, and either way you receive a
+callback.
+
+### Decision Callback Payload
+
+The callback has the usual fields plus two more:
+
+| Field | Contents |
+| --- | --- |
+| `message` | Base64url of the exact signed envelope bytes (see below). |
+| `signature` | BLS signature over those bytes, made with the decision domain tag. |
+| `keys`, `matched_tier`, `request_id`, `yid` | Same as in [Callback Payload](#callback-payload). |
+| `decision` | `approve` or `reject`, copied from the envelope. |
+| `terms` | Your `terms`, copied from the envelope. |
+
+Act only on values inside the verified envelope. `decision` and `terms` are
+copies for convenience.
+
+### The Envelope
+
+The decoded `message` is a JSON object:
+
+```json
+{
+  "action": "partner_signing.decision",
+  "app_id": "ptr_416582cd9ea9bb6c3750de1c",
+  "assurance_tier": "high",
+  "decision": "approve",
+  "message": "<your message value, unchanged>",
+  "request_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+  "signed_at": 1791234567,
+  "terms": { "title": "…", "summary": "…", "details": [] },
+  "version": 1,
+  "yid": "<stable unique yid>"
+}
+```
+
+Parse the bytes you received. Don't re-encode the JSON before verifying.
+
+### Domain Tag
+
+A domain tag is a fixed label mixed into a BLS signature, so a signature made
+under one tag never verifies under another. Signed decisions use:
+
+```
+YANEZ_PARTNER_DECISION_V1_BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_
+```
+
+Links without `terms` keep the tag in [BLS Verification](#bls-verification).
+The separate tag means a signature from an ordinary link can never pass as a
+signed decision.
+
+```python
+from py_ecc.bls import G2Basic
+
+class DecisionBLS(G2Basic):
+    DST = b"YANEZ_PARTNER_DECISION_V1_BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_"
+
+def verify_decision_signature(pubkey_g1: bytes, envelope: bytes, signature_g2: bytes) -> bool:
+    if len(pubkey_g1) != 48 or len(signature_g2) != 96:
+        return False
+    try:
+        return bool(DecisionBLS.Verify(pubkey_g1, envelope, signature_g2))
+    except Exception:
+        return False
+```
+
+### Verifying a Signed Decision
+
+The callback isn't authenticated, so anyone who learns a `request_id` can send
+one. Ignore any callback that fails these checks, and mark the request used
+only after one passes. A failed callback must leave the request open, so the
+user's real callback still gets through.
+
+1. `request_id` maps to a request you issued that isn't expired or already
+   decided. Don't mark it used yet.
+2. Decode `message` and verify `signature` over those exact bytes with the
+   `keys` entry whose `threshold_tier` equals `matched_tier`, using the
+   decision domain tag.
+3. Parse the envelope and check that:
+    - `version` is `1` and `action` is `partner_signing.decision`.
+    - `app_id` is your `partner_id`.
+    - `request_id` equals the callback's `request_id`.
+    - `yid` is the user you sent the request to.
+    - `assurance_tier` equals `matched_tier`.
+    - `message` equals the `message` you put in the link.
+    - `terms` has the same keys and values as the `terms` you sent.
+    - `signed_at` falls within the request's lifetime.
+4. **Required:** call [`POST /api/partners/records/validate`](api/backend-api.md#validate-a-record)
+   with the `yid` and the matched `group_public_key`, and require both results
+   to be `true`. The callback reports its own keys, so without this check a
+   forged callback could carry someone else's key.
+5. If you require a minimum tier, compare the matched key with the per-tier
+   keys you stored at enrollment, as in step 8 of
+   [Verification Steps](#verification-steps). `records/validate` confirms the
+   key belongs to the `yid`, not which tier it is.
+6. In one atomic step, mark the request decided and record `decision`. If a
+   valid callback already decided it, ignore this one.
+7. Act on the recorded `decision`.
+
+A callback whose `message` isn't an envelope, after you sent `terms`, came
+from an older YanezYID. Ignore it; if the request expires without a valid
+callback, treat it as not approved.
+
 ## Address Derivation
 
 ```python
