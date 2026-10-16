@@ -130,3 +130,54 @@ if __name__ == "__main__":
     print("Confirmed" if confirmed else f"Rejected: {result}")
 ```
 
+## Send a Signing Request by Push
+
+`POST`{ .method .post } `/api/partners/signing-requests`
+
+Sends a signing request to the user's phone as a push notification, so the user
+doesn't have to scan a QR code. You send the same signed link you would show as
+a QR code, plus the user's `yid`. Yanez stores the link for five minutes and
+notifies every phone registered for that `yid`. The first phone to open the
+notification gets the request; another phone that opens it sees an expired
+message. After that, the flow is the same as a scanned QR code, and the result
+arrives at your `callback`.
+
+This endpoint requires [signed partner request authentication](../authentication.md).
+The authenticated partner must be the partner whose `app_id` is in the link.
+
+### Request
+
+```json
+{
+  "payload": "https://yid.yanez.ai/open?message=...&callback=...&method=post&request_id=...&event=transaction.signed&description=...&terms=...&app_id=ptr_...&kid=key-1&app_sig=...",
+  "yid": "796aaf67d496447fa4059dcea80b03aa"
+}
+```
+
+| Field | Required | Notes |
+| --- | --- | --- |
+| `payload` | yes | The complete signed link, up to 4,096 characters. See [Deep-Link Signing](../deep-link-signing.md). |
+| `yid` | yes | The user's 32-character hex `yid`. |
+
+### Response — 201 Created
+
+```json
+{
+  "request_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+  "expires_at": "2026-10-06T18:05:00Z"
+}
+```
+
+`201` means Yanez stored the request. It doesn't mean a phone received the
+notification. If the user never responds, the request expires at `expires_at`.
+
+### Errors
+
+| Status | When |
+| --- | --- |
+| `400` | The link's `terms` is invalid. `detail` names the problem, for example `terms.title must be a non-blank string`. Also returned for `terms requires method=post` and `terms must appear at most once`. |
+| `400` | The link is malformed or has no valid `request_id`. |
+| `401` | Request authentication or the link's `app_sig` failed. |
+| `403` | The link was signed by a different partner than the one calling. |
+| `404` | Unknown `yid`. |
+| `409` | This `request_id` was already used. |

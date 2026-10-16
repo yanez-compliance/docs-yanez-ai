@@ -33,7 +33,8 @@ There is one exact path, `/open`, with nothing beneath it (`/open/foo` is a
 | `method` | yes | `post` or `redirect` — selects callback delivery (case-insensitive). Must be present and non-empty or the link is rejected; an unrecognized value falls back to `redirect`. See [Delivery Modes](callback.md#delivery-modes). |
 | `request_id` | yes | Unique per-request identifier (a UUID works, but the app treats it as an opaque string). Use a fresh value per request. |
 | `event` | yes | See [Supported Events](#supported-events). |
-| `description` | yes | Short human-readable label shown in YanezYID. |
+| `description` | yes | Short human-readable label shown in YanezYID. Not shown when the link has terms. |
+| `terms` | no | What the user is approving, shown as a title, a summary, and labeled rows. Requires `method=post`. See [Approval Terms](#approval-terms). |
 | `app_id` | yes | Your `partner_id` (e.g. `ptr_416582cd9ea9bb6c3750de1c`). |
 | `kid` | no | Signing key id. Include if you manage multiple keys. |
 | `app_sig` | yes | Ed25519 signature. **Must be the last parameter.** |
@@ -94,6 +95,58 @@ self-describing: the BLS signature then attests to *what* was approved (`rp`,
 handler an independent expiry and user-binding check on top of the challenge
 store. Whatever shape you choose, keep the exact bytes stable, since the
 signature is computed over them.
+
+## Approval Terms
+
+Add `terms` when you need the user to approve specific details, such as a
+transfer amount and addresses. YanezYID then shows exactly these details, the
+user approves or declines with a face scan, and the user's signature covers
+the details, the decision, and the request. See
+[Signed Decisions](callback.md#signed-decisions) for what your callback
+receives.
+
+`terms` is a JSON object encoded as unpadded base64url (base64 with `-` and
+`_`, and no `=` at the end):
+
+```json
+{
+  "title": "Approve transfer",
+  "summary": "Send 125.50 USDC from your Main wallet",
+  "details": [
+    {"label": "Amount", "value": "125.50 USDC", "emphasized": true},
+    {"label": "From", "value": "0xAb12…"},
+    {"label": "To", "value": "0xCd34…"},
+    {"label": "Network", "value": "Base"}
+  ]
+}
+```
+
+| Field | Required | Notes |
+| --- | --- | --- |
+| `title` | yes | Non-blank string. The screen's headline. |
+| `summary` | yes | Non-blank string. One sentence that states the whole request. |
+| `details` | yes | Array of rows, shown in order. Can be empty. |
+| `details[].label` | yes | Non-blank string. |
+| `details[].value` | yes | Non-blank string. Write amounts as text, such as `"125.50 USDC"`. |
+| `details[].emphasized` | no | `true` shows the row more prominently. Defaults to `false`. |
+
+Rules:
+
+- No other keys are allowed, at any level. The user signs every key and value
+  of `terms`, so YanezYID refuses fields it can't show. The signed envelope
+  holds the decoded `terms`, not your parameter's original JSON bytes, so
+  compare keys and values when you verify.
+- Duplicate keys are invalid, and a link can have only one `terms`.
+- A link with `terms` must use `method=post`.
+- `terms` shares the link's 4,096-character limit.
+
+If a rule fails, YanezYID shows an error and sends nothing, and
+`POST /api/partners/signing-requests` returns `400`.
+
+**Note:** Older versions of YanezYID ignore `terms`, show `description`, and
+sign only `message`. Set `description` to something like "Update YanezYID to
+approve this transfer", and treat a callback without a signed decision as not
+approved.
 
 ## Signing
 
