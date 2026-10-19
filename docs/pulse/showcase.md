@@ -12,10 +12,6 @@ partner apps that verify people with YID.
 
 <ul class="showcase">
   <li>
-    <a href="https://0xhound.com/" target="_blank" rel="noopener"><img src="../../assets/showcase/yid-wallet.png" width="196" height="48" alt="YID Wallet"></a>
-    <span class="showcase-label">Let your agent spend. <span class="showcase-grad">Never hand it your keys.</span></span>
-  </li>
-  <li>
     <a href="../../assets/showcase/itkan-purchase-story.mp4" data-popup="video"><img src="../../assets/showcase/itkan.png" width="196" height="48" alt="Itkan: play the purchase story video"></a>
     <span class="showcase-label">Biometric approval for a robotics purchase <a class="showcase-more" href="../../assets/showcase/itkan-dashboard.png" data-popup="image">Dashboard</a></span>
   </li>
