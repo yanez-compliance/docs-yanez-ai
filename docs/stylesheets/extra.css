@@ -382,3 +382,10 @@
   font: inherit;
   cursor: pointer;
 }
+
+/* Keep the top-level tabs on narrow screens. Material hides them below
+   1220px, so readers lose the section links with no hint where they went.
+   The tab list already scrolls sideways when it does not fit. */
+@media screen and (max-width: 76.234375em) {
+  .md-tabs { display: block; }
+}
