@@ -23,6 +23,8 @@ export const USER_SIG_ALG = "BLS12-381-G2-basic";
 export const ENVELOPE_VERSION = 1;
 /** `action` in the signed envelope. A signature over some other action is not a decision. */
 export const ENVELOPE_ACTION = "agent_authorizations.decision";
+/** The only assurance tiers the contract defines. Any other value is refused. */
+const ASSURANCE_TIERS = ["low", "medium", "high"];
 
 const SIGNATURE_HEX_LEN = 192; // 96-byte compressed G2 point
 const PUBLIC_KEY_HEX_LEN = 96; // 48-byte compressed G1 point
@@ -354,6 +356,9 @@ export function verifyUserProof(
   }
   if (envelope.assurance_tier !== tier) {
     throw new UserProofError("signed assurance tier does not match the receipt claim");
+  }
+  if (!ASSURANCE_TIERS.includes(tier)) {
+    throw new UserProofError(`unknown assurance tier "${tier}"`);
   }
 
   const signedTerms = envelope.terms;

@@ -27,6 +27,8 @@ USER_SIG_ALG = "BLS12-381-G2-basic"
 ENVELOPE_VERSION = 1
 #: `action` in the signed envelope. A signature over some other action is not a decision.
 ENVELOPE_ACTION = "agent_authorizations.decision"
+#: The only assurance tiers the contract defines. Any other value is refused.
+_ASSURANCE_TIERS = ("low", "medium", "high")
 
 _SIGNATURE_HEX_LEN = 192   # 96-byte compressed G2 point
 _PUBLIC_KEY_HEX_LEN = 96   # 48-byte compressed G1 point
@@ -305,6 +307,8 @@ def verify_user_proof(claims: Mapping[str, Any], *, expected_issuer: str) -> Use
         raise UserProofError("signed yid does not match the receipt sub")
     if envelope.get("assurance_tier") != tier:
         raise UserProofError("signed assurance tier does not match the receipt claim")
+    if tier not in _ASSURANCE_TIERS:
+        raise UserProofError(f"unknown assurance tier {tier!r}")
 
     signed_terms = envelope.get("terms")
     if not isinstance(signed_terms, dict):

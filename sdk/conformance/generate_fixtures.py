@@ -263,6 +263,12 @@ def main() -> None:
                        "yanez_assurance_tier": "high"}),
             "ok": False, "error": "user_signature",
             "why": "the receipt claims a higher tier than the user signed"},
+        "user_tier_unknown": {
+            "artifact": receipt(
+                envelope=_envelope(assurance_tier="ultra"),
+                proof=_proof(user_sk, _envelope(assurance_tier="ultra"))),
+            "ok": False, "error": "user_signature",
+            "why": "a tier outside low, medium and high, refused even with no floor"},
         "user_terms_mismatch": {
             "artifact": receipt(envelope=_envelope(
                 terms={**TERMS, "amount": {"minor_units": 1, "currency": "USD"}})),
