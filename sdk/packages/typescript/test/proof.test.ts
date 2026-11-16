@@ -159,6 +159,28 @@ test("overflowing numbers are refused at parse time", () => {
   assert.throws(() => parseJsonStrict('{"n":-1e999}'), /non-finite/);
 });
 
+test("numbers that parsing rounds to a whole number are refused", () => {
+  // 18000.0000000000000001 parses as exactly 18000, so a check on the parsed value would
+  // wrongly call it a whole number. Only the text shows it is not.
+  for (const text of ['{"n":18000.0000000000000001}', '{"n":2.0000000000000001}', '{"n":1e-400}']) {
+    assert.throws(() => parseJsonStrict(text), /rounded/);
+  }
+  // Whole numbers in any spelling, and fractions that stay fractions, still parse.
+  assert.deepStrictEqual(
+    parseJsonStrict('{"a":2.0,"b":1.5e1,"c":0.5,"d":0.0e-400,"s":"1.0000000000000001"}'),
+    { a: 2, b: 15, c: 0.5, d: 0, s: "1.0000000000000001" });
+  // Exponents too long for a naive integer conversion, and zero-padded ones.
+  const huge = "9".repeat(5000);
+  assert.deepStrictEqual(
+    parseJsonStrict(`[0e-9999999999999999999,0e+${huge},10e-0000001]`), [0, 0, 1]);
+  assert.throws(() => parseJsonStrict(`[1e-${huge}]`), /rounded/);
+  // Receipt claims have no 16 KiB bound, so the exponent is judged against the real
+  // digit count. 1 + 10^-21 parses as 1 and is refused; 10^1000000 x 10^-1000000 is 1.
+  assert.throws(
+    () => parseJsonStrict(`[0.${"0".repeat(999999)}1${"0".repeat(20)}1e+1000000]`), /rounded/);
+  assert.deepStrictEqual(parseJsonStrict(`[1${"0".repeat(1000000)}e-1000000]`), [1]);
+});
+
 test("numbers outside the exact double range never compare equal", () => {
   // 2^53 + 1 and 2^53 are different amounts, but a number reads both as 2^53. Both
   // SDKs refuse such numbers rather than compare them.

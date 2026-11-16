@@ -111,9 +111,9 @@ def _encode(envelope: dict) -> bytes:
     return json.dumps(envelope, separators=(",", ":"), sort_keys=True).encode()
 
 
-def _proof(user_sk: int, envelope: dict) -> dict:
-    """The five §4.6 claims for one signed envelope."""
-    raw = _encode(envelope)
+def _proof(user_sk: int, envelope: dict, raw: bytes | None = None) -> dict:
+    """The five §4.6 claims for one signed envelope, optionally spelled as `raw`."""
+    raw = _encode(envelope) if raw is None else raw
     return {
         "yanez_assurance_tier": envelope["assurance_tier"],
         "yanez_user_public_key": "0x" + G2Basic.SkToPk(user_sk).hex(),
@@ -141,6 +141,37 @@ def _claims(user_sk: int, *, envelope: dict | None = None, proof: dict | None = 
     }
     claims.update(overrides)
     return {k: v for k, v in claims.items() if v is not None}
+
+
+# Parses as exactly 18000 in both languages, so it would match the expected amount if a
+# verifier only looked at the parsed number. The bytes say something else.
+AMOUNT_TEXT = b'"minor_units":18000'
+ROUNDED_AMOUNT_TEXT = b'"minor_units":18000.0000000000000001'
+
+
+def _round_amount(raw: bytes) -> bytes:
+    assert raw.count(AMOUNT_TEXT) == 1
+    return raw.replace(AMOUNT_TEXT, ROUNDED_AMOUNT_TEXT)
+
+
+# Whole numbers in unusual spellings, including exponents too long for a naive integer
+# conversion. Both SDKs must accept every one.
+WHOLE_SPELLINGS_TEXT = (b'{"x_whole_spellings":[2.0,1.5e1,0.0e-400,10e-0000001,'
+                        b'0e-9999999999999999999,0e+' + b"9" * 5000 + b"],")
+
+
+def _add_whole_spellings(raw: bytes) -> bytes:
+    assert raw.startswith(b"{")
+    return WHOLE_SPELLINGS_TEXT + raw[1:]
+
+
+def _resign(key: Ed25519PrivateKey, artifact: str, edit) -> str:
+    """The receipt with `edit` applied to its claims text, signed again under `key`."""
+    header, payload, _ = artifact.split(".")
+    raw = base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4))
+    payload = _b64url(edit(raw))
+    signature = _b64url(key.sign(f"{header}.{payload}".encode()))
+    return f"{header}.{payload}.{signature}"
 
 
 def _tamper(artifact: str) -> str:
@@ -222,6 +253,13 @@ def main() -> None:
             "artifact": receipt(envelope=_envelope(terms=unsafe_terms), yanez_terms=unsafe_terms),
             "ok": False, "error": "verification",
             "expected_terms": {**TERMS, "amount": {"minor_units": 2**53, "currency": "USD"}}},
+        # 18000.0000000000000001 is not 18000, but parsing rounds it to 18000. Both SDKs
+        # must refuse the receipt before the rounded value can match.
+        "terms_rounded_number": {
+            "artifact": _resign(key, valid, _round_amount), "ok": False, "error": "verification"},
+        "whole_number_spellings": {
+            "artifact": _resign(key, valid, _add_whole_spellings), "ok": True,
+            "why": "2.0, 0e-9999999999999999999 and friends are whole numbers, not rounded ones"},
 
         # --- the approver's own signature (spec §4.7 steps 4-5) ---
         #
@@ -281,6 +319,11 @@ def main() -> None:
                 terms={**TERMS, "amount": {"minor_units": 1, "currency": "USD"}})),
             "ok": False, "error": "user_signature",
             "why": "Yanez's account of the terms and the user's disagree"},
+        "user_terms_rounded_number": {
+            "artifact": receipt(proof=_proof(user_sk, _envelope(),
+                                             _round_amount(_encode(_envelope())))),
+            "ok": False, "error": "user_signature",
+            "why": "the user signed 18000.0000000000000001, which parsing rounds to 18000"},
         "user_issuer_mismatch": {
             "artifact": receipt(envelope=_envelope(issuer="https://evil.example")),
             "ok": False, "error": "user_signature", "why": "signed for another issuer"},

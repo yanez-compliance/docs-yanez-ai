@@ -259,7 +259,7 @@ harness:
 | `verify_bls_signature` | `verifyBlsSignature` | Step 4 alone: one signature, the §5 parameters. Returns a boolean, never raises |
 | `decode_signed_message` | `decodeSignedMessage` | base64url with the canonical-encoding check |
 | `terms_equal` | `termsEqual` | The comparison rules above |
-| `parse_json_strict` | `parseJsonStrict` | JSON with duplicate keys and non-finite numbers refused |
+| `parse_json_strict` | `parseJsonStrict` | JSON with duplicate keys, non-finite numbers, and numbers that parsing would round to a whole number refused |
 | `key_is_registered` | `keyIsRegistered` | The registry cross-check below |
 
 ## Checking the key against the registry

@@ -1,4 +1,4 @@
-import { decodeProtectedHeader, importJWK, jwtVerify } from "jose";
+import { base64url, decodeProtectedHeader, importJWK, jwtVerify } from "jose";
 
 import { FetchLike, raiseFor, requireTrustedOrigin } from "./client.js";
 import {
@@ -10,7 +10,7 @@ import {
   UserSignatureError,
 } from "./errors.js";
 import { IntrospectionResult, Terms, VerifiedReceipt } from "./models.js";
-import { UserProofError, termsEqual, verifyUserProof } from "./proof.js";
+import { UserProofError, parseJsonStrict, termsEqual, verifyUserProof } from "./proof.js";
 
 const KEY_CACHE_TTL_MS = 600_000;
 // An unknown kid may refresh the key set, but not more often than this: a flood
@@ -200,6 +200,15 @@ export class ReceiptVerifier {
       claims = payload as Record<string, unknown>;
     } catch (e) {
       throw new ReceiptVerificationError(e instanceof Error ? e.message : String(e));
+    }
+    try {
+      // jwtVerify has already parsed the claims with no number checks. Read the signed
+      // text again under the strict rules, so a number that parsing rounds can never
+      // match the expected terms.
+      parseJsonStrict(new TextDecoder().decode(base64url.decode(artifact.split(".")[1])), Infinity);
+    } catch (e) {
+      throw new ReceiptVerificationError(
+        `receipt claims are not strict JSON: ${e instanceof Error ? e.message : String(e)}`);
     }
 
     for (const name of REQUIRED_CLAIMS) {

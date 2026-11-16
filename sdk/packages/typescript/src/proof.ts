@@ -89,8 +89,9 @@ export interface UserProof {
  *   number holds exactly. Outside it, 2^53 + 1 has already been read as 2^53, so two
  *   different amounts would look equal. Any other number makes the comparison fail.
  *
- * Duplicate object keys and non-finite numbers are rejected at parse time by
- * `parseJsonStrict`, before either side becomes an object.
+ * Duplicate object keys, non-finite numbers, and numbers that parsing would round to a
+ * whole number are rejected at parse time by `parseJsonStrict`, before either side
+ * becomes an object.
  */
 export function termsEqual(a: unknown, b: unknown): boolean {
   if (typeof a === "boolean" || typeof b === "boolean") {
@@ -155,6 +156,32 @@ function assertNoDuplicateKeys(text: string): void {
   }
 }
 
+/**
+ * Reject a number that parsing rounds to a whole number although its text is not one.
+ *
+ * `JSON.parse` reads 18000.0000000000000001 as exactly 18000, so a check on the parsed
+ * value would call it a whole number and let it match an expected 18000. Only the text
+ * shows otherwise. The text is already known to be valid JSON, so once strings are
+ * blanked out, every run of digits is a number.
+ */
+function assertNoRoundedWholeNumbers(text: string): void {
+  const numbers = text.replace(/"(?:[^"\\]|\\.)*"/g, '""')
+    .match(/-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g);
+  for (const literal of numbers ?? []) {
+    if (Number.isInteger(Number(literal)) && !isWholeNumberText(literal)) {
+      throw new Error(`number would be rounded to a whole number: ${literal}`);
+    }
+  }
+}
+
+/** Whether a JSON number's text is exactly a whole number: no non-zero digit after the point. */
+function isWholeNumberText(literal: string): boolean {
+  const [, whole, fraction = "", exponent = "0"] =
+    /^-?(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/.exec(literal)!;
+  const pointAt = whole.length + Number(exponent);
+  return /^0*$/.test((whole + fraction).slice(Math.max(pointAt, 0)));
+}
+
 function jsonDepth(value: unknown): number {
   // Iterative on purpose: this exists to bound pathological nesting, and a recursive
   // walk would hit the limit it is meant to enforce.
@@ -178,8 +205,8 @@ function jsonDepth(value: unknown): number {
  * `JSON.parse` with the §3.3 parse rules.
  *
  * `JSON.parse` rejects the literals NaN and Infinity, but reads an overflowing number
- * such as `1e999` as Infinity, so that is refused here along with duplicate keys and
- * excessive nesting.
+ * such as `1e999` as Infinity, so that is refused here along with duplicate keys,
+ * numbers that parsing rounds to a whole number, and excessive nesting.
  */
 export function parseJsonStrict(text: string, maxDepth = MAX_MESSAGE_DEPTH): unknown {
   const value = JSON.parse(text, (_key, v) => {
@@ -187,6 +214,7 @@ export function parseJsonStrict(text: string, maxDepth = MAX_MESSAGE_DEPTH): unk
     return v;
   });
   assertNoDuplicateKeys(text);
+  assertNoRoundedWholeNumbers(text);
   if (jsonDepth(value) > maxDepth) throw new Error("json is nested too deeply");
   return value;
 }

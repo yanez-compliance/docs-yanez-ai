@@ -17,6 +17,7 @@ from __future__ import annotations
 import base64
 import json
 import math
+import re
 from dataclasses import dataclass
 from typing import Any, Mapping, Optional
 
@@ -100,8 +101,9 @@ def terms_equal(a: Any, b: Any) -> bool:
       disagreeing. A whole-valued float such as `2.0` counts, because JavaScript cannot
       tell it from `2`.
 
-    Duplicate object keys and non-finite numbers are rejected at parse time by
-    `parse_json_strict`, before either side becomes a Python object.
+    Duplicate object keys, non-finite numbers, and numbers that parsing would round to a
+    whole number are rejected at parse time by `parse_json_strict`, before either side
+    becomes a Python object.
     """
     if isinstance(a, bool) or isinstance(b, bool):
         return isinstance(a, bool) and isinstance(b, bool) and a is b
@@ -140,7 +142,32 @@ def _parse_finite_float(text: str) -> float:
     if not math.isfinite(value):
         # `1e999` is not a literal Infinity, so `parse_constant` never sees it.
         raise ValueError(f"non-finite number: {text}")
+    if value.is_integer() and not _is_whole_number_text(text):
+        # 18000.0000000000000001 parses as exactly 18000. Only the text shows it is not
+        # a whole number, so it is refused here, before the rounded value can match.
+        raise ValueError(f"number would be rounded to a whole number: {text}")
     return value
+
+
+_NUMBER_TEXT = re.compile(r"-?(\d+)(?:\.(\d+))?(?:[eE]([+-]?)(\d+))?")
+
+
+def _is_whole_number_text(text: str) -> bool:
+    """Whether a JSON number's text is exactly a whole number: no non-zero digit after
+    the decimal point once the exponent is applied. The same rule as the TypeScript SDK."""
+    match = _NUMBER_TEXT.fullmatch(text)
+    assert match is not None  # json.loads only hands over valid number text
+    whole, fraction, sign, exponent = match.groups()
+    digits = whole + (fraction or "")
+    exponent = (exponent or "0").lstrip("0") or "0"
+    if len(exponent) > len(str(len(digits))) + 1:
+        # The exponent is more than ten times the digit count, so the point lands past
+        # every digit and only the direction matters. This also keeps int() away from
+        # exponents too long for it to convert.
+        point_at = 0 if sign == "-" else len(digits)
+    else:
+        point_at = len(whole) + (-int(exponent) if sign == "-" else int(exponent))
+    return not digits[max(point_at, 0):].strip("0")
 
 
 def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict:

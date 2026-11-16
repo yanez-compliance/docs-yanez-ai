@@ -19,7 +19,7 @@ from yanez_authz.errors import (
     UserSignatureError,
 )
 from yanez_authz.models import IntrospectionResult, VerifiedReceipt
-from yanez_authz.proof import UserProofError, terms_equal, verify_user_proof
+from yanez_authz.proof import UserProofError, parse_json_strict, terms_equal, verify_user_proof
 
 _KEY_CACHE_TTL_SECONDS = 600
 # An unknown kid may force one early refresh (key rotation), but a stream of garbage
@@ -173,6 +173,13 @@ class ReceiptVerifier:
             )
         except jwt.PyJWTError as e:
             raise ReceiptVerificationError(str(e)) from None
+        try:
+            # jwt.decode has already parsed the claims with no number checks. Read the
+            # signed text again under the strict rules, so a number that parsing
+            # rounds can never match the expected terms.
+            parse_json_strict(_b64url_decode(artifact.split(".")[1]), max_depth=None)
+        except ValueError as e:
+            raise ReceiptVerificationError(f"receipt claims are not strict JSON: {e}") from None
 
         for name in _REQUIRED_CLAIMS:
             if claims.get(name) is None:
