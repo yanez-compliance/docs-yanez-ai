@@ -26,6 +26,10 @@ export function requireTrustedOrigin(baseUrl: string): string {
   } catch {
     throw new Error("baseUrl must be an absolute URL");
   }
+  if (url.username !== "" || url.password !== "") {
+    // https://api.yanez.ai@evil.example connects to evil.example.
+    throw new Error("baseUrl must not contain a user name or password");
+  }
   // URL keeps IPv6 hostnames bracketed ("[::1]"); compare the bare address.
   const host = url.hostname.replace(/^\[|\]$/g, "");
   if (url.protocol === "https:" || (url.protocol === "http:" && LOOPBACK.has(host))) {

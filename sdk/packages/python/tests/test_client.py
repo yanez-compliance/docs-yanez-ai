@@ -156,6 +156,14 @@ def test_https_is_required_off_loopback():
         AuthorizationClient("http://yanez.example", KEY)
 
 
+def test_user_info_in_the_base_url_is_refused():
+    """`https://api.yanez.ai@evil.example` connects to evil.example. The key must never
+    go to a host because the URL looked right at a glance."""
+    for url in ("https://api.yanez.ai@evil.example", "https://user:pass@yanez.example"):
+        with pytest.raises(ValueError, match="user name or password"):
+            AuthorizationClient(url, KEY)
+
+
 def test_wait_returns_every_terminal_state_as_a_value(http_fixtures):
     for terminal in ("poll_approved", "poll_rejected", "poll_expired"):
         responses = iter([http_fixtures["poll_pending"], http_fixtures[terminal]])

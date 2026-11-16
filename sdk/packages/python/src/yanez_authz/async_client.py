@@ -22,6 +22,9 @@ def require_trusted_origin(base_url: str) -> str:
     """HTTPS everywhere except loopback development hosts. The base URL is process
     configuration, never a per-call (model-supplied) value."""
     parts = urlsplit(base_url)
+    if parts.username or parts.password:
+        # https://api.yanez.ai@evil.example connects to evil.example.
+        raise ValueError("base_url must not contain a user name or password")
     if parts.scheme == "https":
         return base_url.rstrip("/")
     if parts.scheme == "http" and parts.hostname in _LOOPBACK:

@@ -161,6 +161,7 @@ def main() -> None:
         return _sign(key, KID, _claims(user_sk, **kw))
 
     valid = receipt()
+    unsafe_terms = {**TERMS, "amount": {"minor_units": 2**53 + 1, "currency": "USD"}}
     bounded = _sign(key, KID, _claims(
         user_sk, envelope=_envelope(consent_not_after=CONSENT_NOT_AFTER),
         yanez_consent_not_after=CONSENT_NOT_AFTER))
@@ -215,6 +216,12 @@ def main() -> None:
         "terms_mismatch": {
             "artifact": valid, "ok": False, "error": "verification",
             "expected_terms": {**TERMS, "amount": {"minor_units": 99900, "currency": "USD"}}},
+        # 2^53 + 1 and 2^53 are different amounts, but a JavaScript number cannot hold
+        # 2^53 + 1 and reads it as 2^53. Both SDKs must refuse, not call them equal.
+        "terms_unsafe_integer": {
+            "artifact": receipt(envelope=_envelope(terms=unsafe_terms), yanez_terms=unsafe_terms),
+            "ok": False, "error": "verification",
+            "expected_terms": {**TERMS, "amount": {"minor_units": 2**53, "currency": "USD"}}},
 
         # --- the approver's own signature (spec §4.7 steps 4-5) ---
         #

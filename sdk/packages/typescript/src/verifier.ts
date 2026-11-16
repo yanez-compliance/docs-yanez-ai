@@ -383,22 +383,29 @@ export class ReceiptVerifier {
     if (options.consume) {
       const result = await this.introspect(artifact, {
         consume: true, consumerToken: options.consumerToken, signal: options.signal });
-      if (result.valid && result.reason === "already_consumed") {
+      // Exact values only: a malformed answer such as "valid": "false" is truthy, and
+      // must refuse rather than authorize.
+      if (result.valid !== true) {
+        throw new ReceiptVerificationError(result.reason ?? "invalid receipt");
+      }
+      if (result.jti !== receipt.jti) {
+        // Checked before the outcomes below, because reservation_held lets the caller
+        // resume, and that must never come from an answer about another receipt.
+        throw new ReceiptVerificationError("introspection answered for a different receipt");
+      }
+      if (result.reason === "already_consumed") {
         throw new AlreadyConsumedError("receipt was already spent");
       }
-      if (result.valid && result.reason === "reservation_held") {
+      if (result.reason === "reservation_held") {
         throw new ReservationHeldError(
           "this consumer already holds the reservation; reconcile with the original "
           + "idempotency key rather than re-approving", receipt);
       }
-      if (result.valid && result.reason === "consent_expired") {
+      if (result.reason === "consent_expired") {
         throw new ConsentPolicyError("past the user's consent bound");
       }
-      if (!result.valid) {
-        throw new ReceiptVerificationError(result.reason ?? "invalid receipt");
-      }
       // Only a consumption the server confirms may authorize a single-use action.
-      if (result.consumedNow !== true) {
+      if (result.consumedNow !== true || result.reason !== undefined) {
         throw new ReceiptVerificationError(
           result.reason ? `receipt was not consumed: ${result.reason}` : "receipt was not consumed");
       }

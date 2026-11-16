@@ -136,6 +136,29 @@ def test_duplicate_keys_in_the_signed_message_are_refused(receipts):
         parse_json_strict(b'{"decision":"approve","decision":"reject"}')
 
 
+def test_overflowing_numbers_are_refused_at_parse_time():
+    """`1e999` is not a literal Infinity, so it slips past the constant check unless the
+    number parser itself refuses it."""
+    from yanez_authz.proof import parse_json_strict
+
+    for raw in (b'{"n":1e999}', b'{"n":-1e999}'):
+        with pytest.raises(ValueError, match="non-finite"):
+            parse_json_strict(raw)
+
+
+def test_numbers_outside_the_exact_double_range_never_compare_equal():
+    """2^53 + 1 and 2^53 are different amounts, but a JavaScript verifier reads both as
+    2^53. Both SDKs refuse such numbers rather than compare them."""
+    big = 2**53
+    assert not terms_equal({"n": big + 1}, {"n": big})
+    assert not terms_equal({"n": big}, {"n": big})
+    assert not terms_equal({"n": 1.5}, {"n": 1.5})
+    assert terms_equal({"n": big - 1}, {"n": big - 1})
+    assert terms_equal({"n": -(big - 1)}, {"n": -(big - 1)})
+    # JavaScript cannot tell 2.0 from 2, so neither may Python.
+    assert terms_equal({"n": 2.0}, {"n": 2})
+
+
 # --- policy gates an executor applies on top ---
 
 

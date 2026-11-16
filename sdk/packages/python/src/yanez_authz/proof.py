@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import base64
 import json
+import math
 from dataclasses import dataclass
 from typing import Any, Mapping, Optional
 
@@ -93,6 +94,11 @@ def terms_equal(a: Any, b: Any) -> bool:
       `===` agree here; `isDeepStrictEqual` does not, which is why this SDK no longer
       uses it. Two verifiers reading the same bytes must reach the same verdict.
     - Array order is significant. A reordered `details` array is different terms.
+    - Every number must be a whole number between -(2^53 - 1) and 2^53 - 1, the range a
+      JavaScript number holds exactly. Outside it, 2^53 + 1 reads as 2^53 in JavaScript,
+      so any other number makes the comparison fail rather than risk two verifiers
+      disagreeing. A whole-valued float such as `2.0` counts, because JavaScript cannot
+      tell it from `2`.
 
     Duplicate object keys and non-finite numbers are rejected at parse time by
     `parse_json_strict`, before either side becomes a Python object.
@@ -112,10 +118,29 @@ def terms_equal(a: Any, b: Any) -> bool:
     if isinstance(b, list):
         return False
     if isinstance(a, (int, float)):
-        return isinstance(b, (int, float)) and a == b
+        return (isinstance(b, (int, float)) and _is_safe_integer(a) and _is_safe_integer(b)
+                and a == b)
     if isinstance(b, (int, float)):
         return False
     return type(a) is type(b) and a == b
+
+
+_MAX_SAFE_INTEGER = 2**53 - 1
+
+
+def _is_safe_integer(value: int | float) -> bool:
+    """JavaScript's `Number.isSafeInteger`, so both SDKs refuse the same numbers."""
+    if isinstance(value, float) and not value.is_integer():  # also NaN and infinity
+        return False
+    return abs(value) <= _MAX_SAFE_INTEGER
+
+
+def _parse_finite_float(text: str) -> float:
+    value = float(text)
+    if not math.isfinite(value):
+        # `1e999` is not a literal Infinity, so `parse_constant` never sees it.
+        raise ValueError(f"non-finite number: {text}")
+    return value
 
 
 def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict:
@@ -160,6 +185,7 @@ def parse_json_strict(raw: bytes, *, max_depth: Optional[int] = _MAX_MESSAGE_DEP
             raw.decode("utf-8"),
             object_pairs_hook=_reject_duplicate_keys,
             parse_constant=_reject_constant,
+            parse_float=_parse_finite_float,
         )
     except RecursionError:
         raise ValueError("json is nested too deeply") from None

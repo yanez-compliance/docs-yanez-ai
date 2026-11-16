@@ -262,7 +262,9 @@ def test_introspection_outcomes_are_typed(jwks, receipts, http_fixtures):
         (httpx.Response(200, json=http_fixtures["introspect_bad_signature"]),
          ReceiptVerificationError),
         (httpx.Response(200, json={"valid": True, "reason": "consent_expired",
-                                   "consumed_now": False}), ConsentPolicyError),
+                                   "consumed_now": False,
+                                   "jti": http_fixtures["introspect_first_consume"]["jti"]}),
+         ConsentPolicyError),
         (httpx.Response(422, json={"detail": "artifact too large"}), InvalidRequestError),
     ]
     for response, exc in outcomes:
@@ -273,14 +275,39 @@ def test_introspection_outcomes_are_typed(jwks, receipts, http_fixtures):
                                       consumer_token=TOKEN)
 
 
-def test_consume_requires_confirmed_consumption(jwks, receipts):
+def test_consume_requires_confirmed_consumption(jwks, receipts, http_fixtures):
     artifact, terms = receipts["cases"]["valid"]["artifact"], receipts["expected_terms"]
-    for body in ({"valid": True, "consumed_now": False}, {"valid": True}):
+    jti = http_fixtures["introspect_first_consume"]["jti"]
+    for body in ({"valid": True, "consumed_now": False, "jti": jti}, {"valid": True, "jti": jti}):
         verifier, _ = _verifier(jwks, extra_handler=lambda r, body=body: httpx.Response(200, json=body),
                                 now=lambda: receipts["now_fresh"])
-        with pytest.raises(ReceiptVerificationError):
+        with pytest.raises(ReceiptVerificationError, match="receipt was not consumed"):
             verifier.authorize_action(artifact, terms, 900, consume=True,
                                       consumer_token=TOKEN)
+
+
+def test_malformed_consume_answers_never_authorize(jwks, receipts, http_fixtures):
+    """Only valid exactly true, consumed_now exactly true, no reason, and this receipt's
+    jti authorize a single-use action. A truthy look-alike such as "false" must refuse,
+    and so must any answer about another receipt, including a reservation_held one."""
+    artifact, terms = receipts["cases"]["valid"]["artifact"], receipts["expected_terms"]
+    jti, other = http_fixtures["introspect_first_consume"]["jti"], "azr_" + "ff" * 16
+    bodies = (
+        {"valid": "false", "consumed_now": True, "jti": jti},
+        {"valid": 1, "consumed_now": True, "jti": jti},
+        {"valid": True, "consumed_now": "true", "jti": jti},
+        {"valid": True, "consumed_now": True, "reason": "bad_signature", "jti": jti},
+        {"valid": True, "consumed_now": True, "jti": other},
+        {"valid": True, "consumed_now": True},
+        {"valid": True, "consumed_now": False, "reason": "reservation_held", "jti": other},
+    )
+    for body in bodies:
+        verifier, _ = _verifier(jwks, extra_handler=lambda r, body=body: httpx.Response(200, json=body),
+                                now=lambda: receipts["now_fresh"])
+        with pytest.raises(ReceiptVerificationError) as raised:
+            verifier.authorize_action(artifact, terms, 900, consume=True,
+                                      consumer_token=TOKEN)
+        assert type(raised.value) is ReceiptVerificationError, body
 
 
 def test_numeric_date_claims_must_be_integers(jwks, receipts):

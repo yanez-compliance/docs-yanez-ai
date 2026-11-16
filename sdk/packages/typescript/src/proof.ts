@@ -85,6 +85,9 @@ export interface UserProof {
  *   `isDeepStrictEqual`, which separates them: Python's `==` does not, and two
  *   verifiers reading the same bytes must reach the same verdict.
  * - Array order is significant. A reordered `details` array is different terms.
+ * - Every number must be a whole number between -(2^53 - 1) and 2^53 - 1, the range a
+ *   number holds exactly. Outside it, 2^53 + 1 has already been read as 2^53, so two
+ *   different amounts would look equal. Any other number makes the comparison fail.
  *
  * Duplicate object keys and non-finite numbers are rejected at parse time by
  * `parseJsonStrict`, before either side becomes an object.
@@ -95,7 +98,8 @@ export function termsEqual(a: unknown, b: unknown): boolean {
   }
   if (typeof a === "number" || typeof b === "number") {
     // `===` makes -0 equal 0, matching Python's `==`.
-    return typeof a === "number" && typeof b === "number" && a === b;
+    return typeof a === "number" && typeof b === "number"
+      && Number.isSafeInteger(a) && Number.isSafeInteger(b) && a === b;
   }
   if (Array.isArray(a) || Array.isArray(b)) {
     if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
@@ -173,11 +177,15 @@ function jsonDepth(value: unknown): number {
 /**
  * `JSON.parse` with the §3.3 parse rules.
  *
- * `JSON.parse` already rejects NaN and Infinity, so only duplicate keys and nesting
- * depth need enforcing here.
+ * `JSON.parse` rejects the literals NaN and Infinity, but reads an overflowing number
+ * such as `1e999` as Infinity, so that is refused here along with duplicate keys and
+ * excessive nesting.
  */
 export function parseJsonStrict(text: string, maxDepth = MAX_MESSAGE_DEPTH): unknown {
-  const value = JSON.parse(text);
+  const value = JSON.parse(text, (_key, v) => {
+    if (typeof v === "number" && !Number.isFinite(v)) throw new Error(`non-finite number: ${v}`);
+    return v;
+  });
   assertNoDuplicateKeys(text);
   if (jsonDepth(value) > maxDepth) throw new Error("json is nested too deeply");
   return value;

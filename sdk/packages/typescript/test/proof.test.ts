@@ -153,6 +153,23 @@ test("terms comparison matches the Python SDK on the cases that split verifiers"
   assert.ok(termsEqual(receipts.expected_terms, receipts.expected_terms));
 });
 
+test("overflowing numbers are refused at parse time", () => {
+  // JSON.parse refuses the literal Infinity but turns 1e999 into Infinity.
+  assert.throws(() => parseJsonStrict('{"n":1e999}'), /non-finite/);
+  assert.throws(() => parseJsonStrict('{"n":-1e999}'), /non-finite/);
+});
+
+test("numbers outside the exact double range never compare equal", () => {
+  // 2^53 + 1 and 2^53 are different amounts, but a number reads both as 2^53. Both
+  // SDKs refuse such numbers rather than compare them.
+  const big = 2 ** 53;
+  assert.ok(!termsEqual(JSON.parse('{"n":9007199254740993}'), { n: big }));
+  assert.ok(!termsEqual({ n: big }, { n: big }));
+  assert.ok(!termsEqual({ n: 1.5 }, { n: 1.5 }));
+  assert.ok(termsEqual({ n: big - 1 }, { n: big - 1 }));
+  assert.ok(termsEqual({ n: -(big - 1) }, { n: -(big - 1) }));
+});
+
 // --- policy gates an executor applies on top ---
 
 test("the assurance floor is a policy denial, not a bad receipt", async () => {

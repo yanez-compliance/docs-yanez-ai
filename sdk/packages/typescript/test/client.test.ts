@@ -156,6 +156,14 @@ test("https is required off loopback", () => {
   new AuthorizationClient("http://localhost:8001", KEY); // loopback development is fine
 });
 
+test("user info in the base URL is refused", () => {
+  // https://api.yanez.ai@evil.example connects to evil.example. The key must never go
+  // to a host because the URL looked right at a glance.
+  for (const url of ["https://api.yanez.ai@evil.example", "https://user:pass@yanez.example"]) {
+    assert.throws(() => new AuthorizationClient(url, KEY), /user name or password/);
+  }
+});
+
 for (const terminal of ["poll_approved", "poll_rejected", "poll_expired"]) {
   test(`wait returns ${terminal.replace("poll_", "")} as a value`, async () => {
     const responses = [httpFixtures.poll_pending, httpFixtures[terminal]];

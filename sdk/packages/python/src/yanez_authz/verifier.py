@@ -303,17 +303,24 @@ class ReceiptVerifier:
                               min_assurance_tier=min_assurance_tier)
         if consume:
             result = self.introspect(artifact, consume=True, consumer_token=consumer_token)
-            if result.valid and result.reason == "already_consumed":
+            # Exact values only: a malformed answer such as "valid": "false" is truthy,
+            # and must refuse rather than authorize.
+            if result.valid is not True:
+                raise ReceiptVerificationError(result.reason or "invalid receipt")
+            if result.jti != receipt.jti:
+                # Checked before the outcomes below, because reservation_held lets the
+                # caller resume, and that must never come from an answer about another
+                # receipt.
+                raise ReceiptVerificationError("introspection answered for a different receipt")
+            if result.reason == "already_consumed":
                 raise AlreadyConsumedError("receipt was already spent")
-            if result.valid and result.reason == "reservation_held":
+            if result.reason == "reservation_held":
                 raise ReservationHeldError(
                     "this consumer already holds the reservation; reconcile with the "
                     "original idempotency key rather than re-approving", receipt)
-            if result.valid and result.reason == "consent_expired":
+            if result.reason == "consent_expired":
                 raise ConsentPolicyError("past the user's consent bound")
-            if not result.valid:
-                raise ReceiptVerificationError(result.reason or "invalid receipt")
-            if result.consumed_now is not True:
+            if result.consumed_now is not True or result.reason is not None:
                 # Only a consumption the server confirmed authorizes a single-use action.
                 raise ReceiptVerificationError(
                     "receipt was not consumed" + (f": {result.reason}" if result.reason else ""))
