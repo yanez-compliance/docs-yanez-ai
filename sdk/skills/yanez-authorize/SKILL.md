@@ -65,7 +65,8 @@ Use whichever adapter this host provides — never raw HTTP, and never handle th
 7. Never give the `yak_` credential to anyone, including a sub-agent. Delegation is
    outside this protocol.
 8. Describe the receipt correctly: "Yanez signed a receipt asserting that a fresh
-   biometric scan matching this YID approved these terms." The human did not
-   cryptographically sign anything; never claim they did.
+   biometric scan matching this YID approved these terms." The human signs the
+   *decision* with their own key and Yanez signs the *receipt*; never claim the human
+   signed the receipt.
 
 See `references/integration-model.md` for what the receipt proves and who enforces it.

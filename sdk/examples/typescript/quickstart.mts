@@ -6,7 +6,7 @@
 // YANEZ_ISSUER is the issuer string your Yanez operator publishes for the deployment.
 // YANEZ_EXPECTED_YID is the approver's YID (shown in the YID app); a real relying party
 // takes it from its own account records.
-// Pre-release: the package is not on npm yet; build packages/typescript and `npm link` it.
+// Pre-release: install the package first with `npm install @yanez.ai/agent-authorization@beta`.
 import { randomUUID } from "node:crypto";
 
 import {
@@ -15,7 +15,7 @@ import {
   ReceiptVerifier,
   ReservationHeldError,
   UserSignatureError,
-} from "@yanez/agent-authorization";
+} from "@yanez.ai/agent-authorization";
 
 const TERMS = {
   schema_version: 1,

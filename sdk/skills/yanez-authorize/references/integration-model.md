@@ -24,7 +24,8 @@ this skill                 tells the model when and how to ask
   relying party's freshness policy (`yanez_decided_at`), the consent bound the agent
   declared on the user's behalf (`yanez_consent_not_after`), and single-use consumption.
 - Correct language: "Yanez signed a receipt asserting that a fresh biometric scan
-  matching this YID approved these terms." Not "the user signed".
+  matching this YID approved these terms." The user signs the decision, not the
+  receipt, so never say "the user signed the receipt".
 
 Builders may fork this skill to add domain-specific term schemas, but must not weaken
 its stop rules, exact-term rules, or receipt handling.

@@ -54,6 +54,6 @@ a checkout. See Development in the
 | Path | Install | Status |
 |---|---|---|
 | Python SDK | `pip install --pre yanez-agent-authorization` | PyPI, pre-release |
-| CLI | `pip install yanez-authz-cli` (installs `yanez-authz`) | Not published; install from a checkout |
-| MCP server | `pip install yanez-authz-mcp` | Not published; install from a checkout |
+| CLI | `pip install -e sdk/packages/python -e sdk/cli` (installs `yanez-authz`) | Not published; run from the root of a checkout |
+| MCP server | `pip install -e sdk/packages/python -e sdk/integrations/mcp` | Not published; run from the root of a checkout |
 | TypeScript SDK | `npm install @yanez.ai/agent-authorization@beta` | npm, pre-release |
