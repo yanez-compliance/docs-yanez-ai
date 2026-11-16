@@ -19,7 +19,7 @@ from yanez_authz.errors import (
     UserSignatureError,
 )
 from yanez_authz.models import IntrospectionResult, VerifiedReceipt
-from yanez_authz.proof import UserProofError, terms_equal, verify_user_proof
+from yanez_authz.proof import UserProofError, parse_json_strict, terms_equal, verify_user_proof
 
 _KEY_CACHE_TTL_SECONDS = 600
 # An unknown kid may force one early refresh (key rotation), but a stream of garbage
@@ -173,6 +173,13 @@ class ReceiptVerifier:
             )
         except jwt.PyJWTError as e:
             raise ReceiptVerificationError(str(e)) from None
+        try:
+            # jwt.decode has already parsed the claims with no number checks. Read the
+            # signed text again under the strict rules, so a number that parsing
+            # rounds can never match the expected terms.
+            parse_json_strict(_b64url_decode(artifact.split(".")[1]), max_depth=None)
+        except ValueError as e:
+            raise ReceiptVerificationError(f"receipt claims are not strict JSON: {e}") from None
 
         for name in _REQUIRED_CLAIMS:
             if claims.get(name) is None:
@@ -303,17 +310,24 @@ class ReceiptVerifier:
                               min_assurance_tier=min_assurance_tier)
         if consume:
             result = self.introspect(artifact, consume=True, consumer_token=consumer_token)
-            if result.valid and result.reason == "already_consumed":
+            # Exact values only: a malformed answer such as "valid": "false" is truthy,
+            # and must refuse rather than authorize.
+            if result.valid is not True:
+                raise ReceiptVerificationError(result.reason or "invalid receipt")
+            if result.jti != receipt.jti:
+                # Checked before the outcomes below, because reservation_held lets the
+                # caller resume, and that must never come from an answer about another
+                # receipt.
+                raise ReceiptVerificationError("introspection answered for a different receipt")
+            if result.reason == "already_consumed":
                 raise AlreadyConsumedError("receipt was already spent")
-            if result.valid and result.reason == "reservation_held":
+            if result.reason == "reservation_held":
                 raise ReservationHeldError(
                     "this consumer already holds the reservation; reconcile with the "
                     "original idempotency key rather than re-approving", receipt)
-            if result.valid and result.reason == "consent_expired":
+            if result.reason == "consent_expired":
                 raise ConsentPolicyError("past the user's consent bound")
-            if not result.valid:
-                raise ReceiptVerificationError(result.reason or "invalid receipt")
-            if result.consumed_now is not True:
+            if result.consumed_now is not True or result.reason is not None:
                 # Only a consumption the server confirmed authorizes a single-use action.
                 raise ReceiptVerificationError(
                     "receipt was not consumed" + (f": {result.reason}" if result.reason else ""))

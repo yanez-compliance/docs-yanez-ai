@@ -1,4 +1,4 @@
-import { decodeProtectedHeader, importJWK, jwtVerify } from "jose";
+import { base64url, decodeProtectedHeader, importJWK, jwtVerify } from "jose";
 
 import { FetchLike, raiseFor, requireTrustedOrigin } from "./client.js";
 import {
@@ -10,7 +10,7 @@ import {
   UserSignatureError,
 } from "./errors.js";
 import { IntrospectionResult, Terms, VerifiedReceipt } from "./models.js";
-import { UserProofError, termsEqual, verifyUserProof } from "./proof.js";
+import { UserProofError, parseJsonStrict, termsEqual, verifyUserProof } from "./proof.js";
 
 const KEY_CACHE_TTL_MS = 600_000;
 // An unknown kid may refresh the key set, but not more often than this: a flood
@@ -201,6 +201,15 @@ export class ReceiptVerifier {
     } catch (e) {
       throw new ReceiptVerificationError(e instanceof Error ? e.message : String(e));
     }
+    try {
+      // jwtVerify has already parsed the claims with no number checks. Read the signed
+      // text again under the strict rules, so a number that parsing rounds can never
+      // match the expected terms.
+      parseJsonStrict(new TextDecoder().decode(base64url.decode(artifact.split(".")[1])), Infinity);
+    } catch (e) {
+      throw new ReceiptVerificationError(
+        `receipt claims are not strict JSON: ${e instanceof Error ? e.message : String(e)}`);
+    }
 
     for (const name of REQUIRED_CLAIMS) {
       // null is as absent as undefined.
@@ -383,22 +392,29 @@ export class ReceiptVerifier {
     if (options.consume) {
       const result = await this.introspect(artifact, {
         consume: true, consumerToken: options.consumerToken, signal: options.signal });
-      if (result.valid && result.reason === "already_consumed") {
+      // Exact values only: a malformed answer such as "valid": "false" is truthy, and
+      // must refuse rather than authorize.
+      if (result.valid !== true) {
+        throw new ReceiptVerificationError(result.reason ?? "invalid receipt");
+      }
+      if (result.jti !== receipt.jti) {
+        // Checked before the outcomes below, because reservation_held lets the caller
+        // resume, and that must never come from an answer about another receipt.
+        throw new ReceiptVerificationError("introspection answered for a different receipt");
+      }
+      if (result.reason === "already_consumed") {
         throw new AlreadyConsumedError("receipt was already spent");
       }
-      if (result.valid && result.reason === "reservation_held") {
+      if (result.reason === "reservation_held") {
         throw new ReservationHeldError(
           "this consumer already holds the reservation; reconcile with the original "
           + "idempotency key rather than re-approving", receipt);
       }
-      if (result.valid && result.reason === "consent_expired") {
+      if (result.reason === "consent_expired") {
         throw new ConsentPolicyError("past the user's consent bound");
       }
-      if (!result.valid) {
-        throw new ReceiptVerificationError(result.reason ?? "invalid receipt");
-      }
       // Only a consumption the server confirms may authorize a single-use action.
-      if (result.consumedNow !== true) {
+      if (result.consumedNow !== true || result.reason !== undefined) {
         throw new ReceiptVerificationError(
           result.reason ? `receipt was not consumed: ${result.reason}` : "receipt was not consumed");
       }

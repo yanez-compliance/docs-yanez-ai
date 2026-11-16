@@ -191,10 +191,11 @@ test("a JWK without alg EdDSA is not a usable key", async () => {
 });
 
 test("authorizeAction requires a confirmed consumption", async () => {
+  const jti = httpFixtures.introspect_first_consume.jti;
   const responses = [
-    { valid: true, consumed_now: false },
-    { valid: true },
-    { valid: true, consumed_now: true },
+    { valid: true, consumed_now: false, jti },
+    { valid: true, jti },
+    { valid: true, consumed_now: true, jti },
   ];
   const { verifier } = makeVerifier(() => jsonResponse(200, responses.shift()),
     { now: () => receipts.now_fresh });
@@ -205,6 +206,32 @@ test("authorizeAction requires a confirmed consumption", async () => {
   await assert.rejects(act(), { name: "ReceiptVerificationError", message: "receipt was not consumed" });
   await assert.rejects(act(), ReceiptVerificationError);
   assert.ok((await act()).jti);
+});
+
+test("malformed consume answers never authorize", async () => {
+  // Only valid exactly true, consumed_now exactly true, no reason, and this receipt's
+  // jti authorize a single-use action. A truthy look-alike such as "false" must refuse,
+  // and so must any answer about another receipt, including a reservation_held one.
+  const jti = httpFixtures.introspect_first_consume.jti;
+  const other = "azr_" + "ff".repeat(16);
+  const bodies = [
+    { valid: "false", consumed_now: true, jti },
+    { valid: 1, consumed_now: true, jti },
+    { valid: true, consumed_now: "true", jti },
+    { valid: true, consumed_now: true, reason: "bad_signature", jti },
+    { valid: true, consumed_now: true, jti: other },
+    { valid: true, consumed_now: true },
+    { valid: true, consumed_now: false, reason: "reservation_held", jti: other },
+  ];
+  for (const body of bodies) {
+    const { verifier } = makeVerifier(() => jsonResponse(200, body),
+      { now: () => receipts.now_fresh });
+    await assert.rejects(
+      verifier.authorizeAction(receipts.cases.valid.artifact, receipts.expected_terms, 900,
+        { consume: true, consumerToken: TOKEN }),
+      (e: Error) => e.constructor === ReceiptVerificationError,
+      JSON.stringify(body));
+  }
 });
 
 test("expectedSub and expectedAgentKeyId bind the receipt", async () => {

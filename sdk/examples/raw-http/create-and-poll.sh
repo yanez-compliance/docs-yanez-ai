@@ -1,7 +1,21 @@
 #!/usr/bin/env bash
 # Minimal raw-HTTP integration: create a request, long-poll until decided.
-# Needs: YANEZ_BASE_URL, YANEZ_AGENT_API_KEY. Uses curl, jq, and uuidgen.
+# Needs: YANEZ_BASE_URL, YANEZ_AGENT_API_KEY. Uses curl 7.55 or later, jq, and uuidgen.
 set -euo pipefail
+
+# The key may only travel over HTTPS, except to this machine during development. A
+# user name in the URL is refused: https://api.yanez.ai@evil.example connects to
+# evil.example.
+case "$YANEZ_BASE_URL" in
+  *@*) echo "YANEZ_BASE_URL must not contain a user name or password" >&2; exit 1 ;;
+  https://*|http://localhost|http://localhost[:/]*|http://127.0.0.1|http://127.0.0.1[:/]*|http://\[::1\]|http://\[::1\][:/]*) ;;
+  *) echo "YANEZ_BASE_URL must be https:// (plain http is allowed only for localhost)" >&2; exit 1 ;;
+esac
+
+# curl reads the Authorization header from standard input (-H @-), so the key never
+# appears in curl's command-line arguments, which other users on the machine can see
+# in the process list. printf is built into bash, so it starts no process either.
+auth_header() { printf 'Authorization: Bearer %s\n' "$YANEZ_AGENT_API_KEY"; }
 
 terms=$(cat <<'JSON'
 {"schema_version":1,
@@ -18,8 +32,8 @@ JSON
 )
 idem=$(uuidgen)
 
-created=$(curl -sf -X POST "$YANEZ_BASE_URL/api/agent/authorizations" \
-  -H "Authorization: Bearer $YANEZ_AGENT_API_KEY" \
+created=$(auth_header | curl -sf -X POST "$YANEZ_BASE_URL/api/agent/authorizations" \
+  -H @- \
   -H "Idempotency-Key: $idem" \
   -H "Content-Type: application/json" \
   -d "{\"terms\": $terms}")
@@ -27,8 +41,8 @@ request_id=$(echo "$created" | jq -r .request_id)
 echo "created $request_id; approve or reject it in the YID app" >&2
 
 while true; do
-  result=$(curl -sf "$YANEZ_BASE_URL/api/agent/authorizations/$request_id?wait=25" \
-    -H "Authorization: Bearer $YANEZ_AGENT_API_KEY")
+  result=$(auth_header | curl -sf "$YANEZ_BASE_URL/api/agent/authorizations/$request_id?wait=25" \
+    -H @-)
   status=$(echo "$result" | jq -r .status)
   [ "$status" = "pending" ] && continue
   echo "$result" | jq .
