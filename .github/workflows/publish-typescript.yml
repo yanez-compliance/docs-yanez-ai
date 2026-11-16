@@ -21,6 +21,12 @@ jobs:
         working-directory: sdk/packages/typescript
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: tag is on main
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor HEAD FETCH_HEAD || { echo "tag commit is not on main"; exit 1; }
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
