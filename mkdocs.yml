@@ -145,13 +145,13 @@ nav:
           - User-signed approvals: pulse/user-signed-approvals.md
           - Action enforcement: pulse/action-enforcement.md
       - Reference:
-          - OpenAPI contract: https://github.com/yanez-compliance/yanez-agent-authorization/blob/main/openapi/agent-authorization.openapi.yaml
-          - Python SDK: https://github.com/yanez-compliance/yanez-agent-authorization/tree/main/packages/python
-          - TypeScript SDK: https://github.com/yanez-compliance/yanez-agent-authorization/tree/main/packages/typescript
-          - CLI: https://github.com/yanez-compliance/yanez-agent-authorization/tree/main/cli
-          - MCP server: https://github.com/yanez-compliance/yanez-agent-authorization/tree/main/integrations/mcp
-          - Skill: https://github.com/yanez-compliance/yanez-agent-authorization/tree/main/skills/yanez-authorize
-          - Examples: https://github.com/yanez-compliance/yanez-agent-authorization/tree/main/examples
+          - OpenAPI contract: https://github.com/yanez-compliance/docs-yanez-ai/blob/main/sdk/openapi/agent-authorization.openapi.yaml
+          - Python SDK: https://github.com/yanez-compliance/docs-yanez-ai/tree/main/sdk/packages/python
+          - TypeScript SDK: https://github.com/yanez-compliance/docs-yanez-ai/tree/main/sdk/packages/typescript
+          - CLI: https://github.com/yanez-compliance/docs-yanez-ai/tree/main/sdk/cli
+          - MCP server: https://github.com/yanez-compliance/docs-yanez-ai/tree/main/sdk/integrations/mcp
+          - Skill: https://github.com/yanez-compliance/docs-yanez-ai/tree/main/sdk/skills/yanez-authorize
+          - Examples: https://github.com/yanez-compliance/docs-yanez-ai/tree/main/sdk/examples
   - Gate:
       - gate/index.md
   - Changelog:

@@ -127,7 +127,7 @@ the approver has to answer and is not part of the terms:
 [HTTP quickstart](http-quickstart.md).
 
 Profiles per action type (purchase, disclosure, permission):
-[terms guidance](https://github.com/yanez-compliance/yanez-agent-authorization/blob/main/skills/yanez-authorize/references/terms-guidance.md).
+[terms guidance](https://github.com/yanez-compliance/docs-yanez-ai/blob/main/sdk/skills/yanez-authorize/references/terms-guidance.md).
 
 ## Terms are compared whole
 
