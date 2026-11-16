@@ -76,11 +76,11 @@ Rules that must hold in any code you write:
 ## Fetch the docs as markdown
 
 Every page's raw markdown lives in the docs repository, and the API contract lives in
-the code repository. Swap the site URL for the raw GitHub URL:
+the same repository under `sdk/`. Swap the site URL for the raw GitHub URL:
 
 ```sh
 DOCS=https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/docs/pulse
-CODE=https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main
+CODE=https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/sdk
 
 curl "$DOCS/integration-options.md"                   # choosing an integration path
 curl "$DOCS/http-quickstart.md"                       # the HTTP routes

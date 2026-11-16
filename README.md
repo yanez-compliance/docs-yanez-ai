@@ -37,7 +37,7 @@ overrides/main.html   page toolbar (Copy page, Open in Claude or ChatGPT)
 ```
 
 Pulse SDKs, CLI, MCP server, skill, examples, and the OpenAPI contract live in
-[yanez-agent-authorization](https://github.com/yanez-compliance/yanez-agent-authorization).
+[`sdk/`](sdk/).
 When the Pulse API changes there, update the pages under `docs/pulse/` here.
 
 ## Publishing

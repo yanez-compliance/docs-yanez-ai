@@ -5,7 +5,7 @@ description: Create, poll, verify, and consume an authorization over the HTTP ro
 
 # HTTP quickstart
 
-Full schemas: [the OpenAPI contract](https://github.com/yanez-compliance/yanez-agent-authorization/blob/main/openapi/agent-authorization.openapi.yaml).
+Full schemas: [the OpenAPI contract](https://github.com/yanez-compliance/docs-yanez-ai/blob/main/sdk/openapi/agent-authorization.openapi.yaml).
 Five routes; the three agent
 routes take `Authorization: Bearer yak_...`, the two relying-party routes are public.
 

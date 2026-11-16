@@ -17,7 +17,7 @@ Pulse key facts:
 - Credential rule: the `yak_` key comes from configuration (`YANEZ_AGENT_API_KEY` or a secret manager), never from model prompts, tool arguments, command-line flags, or logs. Never hand it to a sub-agent.
 - MCP is not required. A skill alone is not a security boundary; pair it with the CLI or the MCP server. The MCP server exposes only `yanez_request_authorization` and `yanez_get_authorization`; consuming belongs to the action executor, so there is no consume tool.
 - Packages: PyPI `yanez-agent-authorization` (import `yanez_authz`), `yanez-authz-cli` (installs `yanez-authz`), `yanez-authz-mcp`; npm `@yanez.ai/agent-authorization`. Pre-release: the Python SDK is on PyPI (`pip install --pre yanez-agent-authorization`) and the TypeScript SDK is on npm under the `beta` tag (`npm install @yanez.ai/agent-authorization@beta`); the CLI and MCP server are not published yet, so install them from a checkout.
-- Rendered docs: https://docs.yanez.ai/pulse/ Docs source: https://github.com/yanez-compliance/docs-yanez-ai Code: https://github.com/yanez-compliance/yanez-agent-authorization
+- Rendered docs: https://docs.yanez.ai/pulse/ Docs source: https://github.com/yanez-compliance/docs-yanez-ai Code: https://github.com/yanez-compliance/docs-yanez-ai/tree/main/sdk
 
 ## YID Partner Integration
 
@@ -55,27 +55,27 @@ Pulse key facts:
 
 ## Pulse: API contract
 
-- [OpenAPI contract](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/openapi/agent-authorization.openapi.yaml): Full request and response schemas for the five routes, exported from the Yanez server
+- [OpenAPI contract](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/sdk/openapi/agent-authorization.openapi.yaml): Full request and response schemas for the five routes, exported from the Yanez server
 
 ## Pulse: SDKs and adapters
 
-- [Python SDK](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/packages/python/README.md): `yanez-agent-authorization`, an async client for requesting approval and a verifier for receipts
-- [TypeScript SDK](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/packages/typescript/README.md): `@yanez.ai/agent-authorization`, a client and verifier for Node agents and relying parties
-- [CLI](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/cli/README.md): `yanez-authz`, a thin shell adapter over the Python SDK for coding agents that can run local commands
-- [MCP server](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/integrations/mcp/README.md): `yanez-authz-mcp`, a local stdio server that holds one agent credential and exposes the request and get tools
-- [Skill](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/skills/yanez-authorize/SKILL.md): `yanez-authorize`, which teaches an agent when and how to ask before moving money, accepting agreements, releasing sensitive data, changing durable state, or using privileged permissions
+- [Python SDK](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/sdk/packages/python/README.md): `yanez-agent-authorization`, an async client for requesting approval and a verifier for receipts
+- [TypeScript SDK](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/sdk/packages/typescript/README.md): `@yanez.ai/agent-authorization`, a client and verifier for Node agents and relying parties
+- [CLI](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/sdk/cli/README.md): `yanez-authz`, a thin shell adapter over the Python SDK for coding agents that can run local commands
+- [MCP server](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/sdk/integrations/mcp/README.md): `yanez-authz-mcp`, a local stdio server that holds one agent credential and exposes the request and get tools
+- [Skill](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/sdk/skills/yanez-authorize/SKILL.md): `yanez-authorize`, which teaches an agent when and how to ask before moving money, accepting agreements, releasing sensitive data, changing durable state, or using privileged permissions
 
 ## Pulse: Examples
 
-- [Python quickstart](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/examples/python/quickstart.py): Agent side and relying-party side in one file
-- [TypeScript quickstart](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/examples/typescript/quickstart.mts): Agent side and relying-party side in one file
-- [Raw HTTP](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/examples/raw-http/create-and-poll.sh): Create a request and long-poll until it is decided, using curl and jq
-- [MCP integration](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/examples/mcp/README.md): Install and configure the stdio MCP server for an MCP-capable host
-- [Skill + CLI integration](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/examples/skill-cli/README.md): Skill plus CLI for hosts that can run local commands, without MCP
+- [Python quickstart](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/sdk/examples/python/quickstart.py): Agent side and relying-party side in one file
+- [TypeScript quickstart](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/sdk/examples/typescript/quickstart.mts): Agent side and relying-party side in one file
+- [Raw HTTP](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/sdk/examples/raw-http/create-and-poll.sh): Create a request and long-poll until it is decided, using curl and jq
+- [MCP integration](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/sdk/examples/mcp/README.md): Install and configure the stdio MCP server for an MCP-capable host
+- [Skill + CLI integration](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/sdk/examples/skill-cli/README.md): Skill plus CLI for hosts that can run local commands, without MCP
 
 ## Optional
 
-- [Integration model](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/skills/yanez-authorize/references/integration-model.md): What the receipt is and who enforces it
-- [Writing terms](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/skills/yanez-authorize/references/terms-guidance.md): How to write terms specific enough that approval means one thing
-- [Skill evaluation scenarios](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/skills/yanez-authorize/EVALUATIONS.md): The behavioral contract for any host that ships the skill
-- [Security policy](https://raw.githubusercontent.com/yanez-compliance/yanez-agent-authorization/main/SECURITY.md): How to report a vulnerability
+- [Integration model](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/sdk/skills/yanez-authorize/references/integration-model.md): What the receipt is and who enforces it
+- [Writing terms](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/sdk/skills/yanez-authorize/references/terms-guidance.md): How to write terms specific enough that approval means one thing
+- [Skill evaluation scenarios](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/sdk/skills/yanez-authorize/EVALUATIONS.md): The behavioral contract for any host that ships the skill
+- [Security policy](https://raw.githubusercontent.com/yanez-compliance/docs-yanez-ai/main/sdk/SECURITY.md): How to report a vulnerability
