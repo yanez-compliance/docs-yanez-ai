@@ -385,3 +385,23 @@ The Python SDK adds a `py_ecc` dependency and the TypeScript SDK adds `@noble/cu
 pure-language implementations with no build step. Two independent implementations verifying
 the same conformance vectors is deliberate: a library checking its own output proves the
 plumbing, not the parameters.
+
+### Python 0.1.0b7 and TypeScript 0.1.0-beta.7
+
+This release makes both SDKs stricter. It has no API changes, and a well-formed receipt
+still verifies. Both SDKs now refuse:
+
+- **Numbers that parsing would round to a whole number.** JSON parsing reads
+  `18000.0000000000000001` as exactly `18000`, so a check on the parsed value can't see the
+  difference. The SDKs check the number as written, both in the signed terms and in the
+  receipt's claims.
+- **Terms numbers outside the safe range.** When comparing terms, a number above 2^53 - 1
+  never matches, because two different values that large can look equal in JavaScript.
+- **A consume answer that doesn't clearly say yes.** The SDK treats a receipt as consumed
+  only when the answer has `valid: true`, `consumed_now: true`, no `reason`, and the same
+  receipt ID (`jti`) it sent.
+- **A base URL with a user name or password**, such as
+  `https://api.yanez.ai@evil.example`, which actually connects to `evil.example`. Both the
+  client and the receipt verifier refuse it when you create them.
+
+The Python and TypeScript version numbers both end in 7 from this release on.

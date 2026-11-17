@@ -100,7 +100,8 @@ verifier can check a receipt without holding a Yanez key. Each key has this shap
 
 The key-distribution origin is a trust anchor in its own right. Fetch the set from a
 base URL you configure, over HTTPS (plain HTTP only for loopback development), without
-following redirects, and skip any entry whose `kty`, `crv`, `alg`, `kid`, or `x` is
+following redirects. Refuse a base URL that contains a user name or password, because
+`https://api.yanez.ai@evil.example` actually connects to `evil.example`. Skip any entry whose `kty`, `crv`, `alg`, `kid`, or `x` is
 missing or wrong. Checking that a receipt's `iss` matches your expected string does
 not make keys from an untrusted origin trustworthy. The SDK verifiers do all of this.
 
