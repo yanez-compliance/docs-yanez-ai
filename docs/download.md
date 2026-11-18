@@ -21,18 +21,18 @@ Partner applications do **not** embed this app. They hand off to it with a
 [![Get it on Google Play](assets/badge-google-play.png)](https://play.google.com/store/apps/details?id=ai.yanez.yid){ .badge .badge--google data-os="android" }
 </div>
 
-<p class="app-panel__req">Requires iOS 17.6 or later (v1.3.0) · Android 9.0 or later (v1.3.0)</p>
+<p class="app-panel__req">Requires iOS 17.6 or later (v1.6.0) · Android 9.0 or later (v1.6.0)</p>
 </div>
 
 ## Supported versions
 
 | | iOS                         | Android                     |
 | --- |-----------------------------|-----------------------------|
-| Current release | **1.3.0**                   | **1.3.0**                   |
+| Current release | **1.6.0**                   | **1.6.0**                   |
 | Requires | iOS 17.6 or later           | Android 9.0 or later        |
 | Package identifier | `com.yanez.baund`           | `ai.yanez.yid`              |
 | Deep link | `https://yid.yanez.ai/open` | `https://yid.yanez.ai/open` |
-| Last updated | 18 August 2026              | 18 August 2026              |
+| Last updated | 18 November 2026            | 16 November 2026            |
 
 Publisher: YANEZ COMPLIANCE INC.
 
